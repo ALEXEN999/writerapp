@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp, getApps } from "firebase/app";
 import { 
   getAuth, 
@@ -20,7 +20,7 @@ import {
   orderBy 
 } from "firebase/firestore";
 import { 
-  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2
+  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2, Edit2, X, StickyNote, LayoutGrid, Maximize2, Check
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN FIREBASE ---
@@ -55,8 +55,21 @@ const STRUCTURE_TEMPLATES = {
   heroJourney: { name: "El Viaje del Héroe", steps: ["Mundo Ordinario", "La Llamada", "Rechazo", "Mentor", "Umbral", "Pruebas", "Acercamiento", "Ordalía", "Recompensa", "Camino de Vuelta", "Resurrección", "Elixir"] },
   threeActs: { name: "3 Actos", steps: ["Planteamiento", "Incidente", "Giro 1", "Confrontación", "Midpoint", "Giro 2", "Resolución", "Clímax", "Final"] }
 };
-const PLOT_ARCHETYPES = ["Vencer al Monstruo", "Pobreza a Riqueza", "Búsqueda", "Viaje y Retorno", "Comedia", "Tragedia", "Renacimiento"];
-const NEW_STORY_TEMPLATE = { title: "Nueva Historia", plotArchetype: "La Búsqueda", ideas: [], structureType: "heroJourney", structurePoints: [], diegesis: "", lore: [], species: ["Humanos"], subplots: [], characters: [] };
+const PLOT_ARCHETYPES = ["Vencer al Monstruo", "Pobreza a Riqueza", "La Búsqueda", "Viaje y Retorno", "Comedia", "Tragedia", "Renacimiento"];
+
+const NEW_STORY_TEMPLATE = { 
+  title: "Nueva Historia", 
+  plotArchetypes: ["La Búsqueda"], 
+  plots: [], 
+  ideas: [], 
+  structureType: "heroJourney", 
+  structurePoints: [], 
+  diegesis: "", 
+  lore: [], 
+  species: ["Humanos"], 
+  subplots: [], 
+  characters: [] 
+};
 
 // --- Componentes Visuales ---
 const OlympusBackground = () => (
@@ -79,14 +92,14 @@ const MarbleCard = ({ children, header, onMore, onClick, className="" }) => (
   </div>
 );
 
-const PillarButton = ({ onClick, children, variant="primary", icon: Icon, disabled }) => {
+const PillarButton = ({ onClick, children, variant="primary", icon: Icon, disabled, className="" }) => {
   const variants = {
     primary: `bg-stone-800 text-amber-50 border-stone-800 hover:bg-stone-900 hover:border-amber-400`,
     gold: `bg-white text-amber-700 border-amber-500 hover:bg-amber-50`,
     ghost: `bg-transparent text-stone-500 border-transparent hover:bg-stone-100 hover:text-stone-900`
   };
   return (
-    <button onClick={onClick} disabled={disabled} className={`px-6 py-3 font-serif text-xs font-bold uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 border disabled:opacity-50 ${variants[variant] || variants.primary}`}>
+    <button onClick={onClick} disabled={disabled} className={`px-6 py-3 font-serif text-xs font-bold uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 border disabled:opacity-50 ${variants[variant] || variants.primary} ${className}`}>
       {Icon && <Icon size={14} />} {children}
     </button>
   );
@@ -99,9 +112,8 @@ const LoadingView = ({ text = "Cargando..." }) => (
   </div>
 );
 
-// --- INDICADOR DE NUBE ---
 const CloudStatus = ({ isSaving }) => (
-  <div className="flex items-center gap-2 px-3 py-1 bg-white/80 border border-stone-200 rounded-full shadow-sm">
+  <div className="flex items-center gap-2 px-3 py-1 bg-white/80 border border-stone-200 rounded-full shadow-sm transition-all duration-300">
     {isSaving ? (
       <>
         <Loader2 size={14} className="animate-spin text-amber-500" />
@@ -192,11 +204,17 @@ const CharactersView = ({ data, updateData }) => {
   );
 };
 
-// --- PANTALLAS PRINCIPALES ---
+// --- PANTALLA DE HISTORIA AVANZADA ---
 
 const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, updateData, onCreateStory, onDemoLogin, isSaving }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [newArchetype, setNewArchetype] = useState("");
   
+  // Estados para el Editor de Trama Fullscreen
+  const [expandedPlotId, setExpandedPlotId] = useState(null);
+
+  // LOGIN LOGIC
   const handleLogin = async () => {
     setIsLoggingIn(true);
     try {
@@ -211,24 +229,77 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
     }
   };
 
+  // ARQUETIPOS
+  const addArchetype = (arch) => {
+    const current = data.plotArchetypes || [];
+    if (!current.includes(arch)) {
+      updateData({ ...data, plotArchetypes: [...current, arch] });
+    }
+    setNewArchetype("");
+  };
+
+  const removeArchetype = (arch) => {
+    updateData({ ...data, plotArchetypes: (data.plotArchetypes || []).filter(a => a !== arch) });
+  };
+
+  // TRAMAS (Funciones)
+  const createNewPlot = () => {
+    const newPlot = {
+      id: Date.now(),
+      title: "Nueva Trama",
+      description: "",
+      characterIds: []
+    };
+    updateData({ ...data, plots: [...(data.plots || []), newPlot] });
+    setExpandedPlotId(newPlot.id);
+  };
+
+  const removePlot = (id) => {
+    updateData({ ...data, plots: (data.plots || []).filter(p => p.id !== id) });
+    if (expandedPlotId === id) setExpandedPlotId(null);
+  };
+
+  const updateExpandedPlot = (field, value) => {
+    const updatedPlots = (data.plots || []).map(p => 
+      p.id === expandedPlotId ? { ...p, [field]: value } : p
+    );
+    updateData({ ...data, plots: updatedPlots });
+  };
+
+  const toggleCharForExpandedPlot = (charId) => {
+    const currentPlot = (data.plots || []).find(p => p.id === expandedPlotId);
+    if (!currentPlot) return;
+    
+    const currentIds = currentPlot.characterIds || [];
+    const newIds = currentIds.includes(charId) 
+      ? currentIds.filter(id => id !== charId)
+      : [...currentIds, charId];
+      
+    updateExpandedPlot('characterIds', newIds);
+  };
+
+  // IDEAS
+  const addIdea = () => {
+    const newIdea = { id: Date.now(), text: "Nueva idea brillante...", x: Math.random() * 5, y: Math.random() * 5, color: Math.floor(Math.random() * 3) };
+    updateData({ ...data, ideas: [newIdea, ...(data.ideas || [])] });
+  };
+
+  const updateIdea = (id, text) => {
+    updateData({ ...data, ideas: data.ideas.map(i => i.id === id ? { ...i, text } : i) });
+  };
+
+  // --- RENDERIZADO ---
+
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#fdfbf7]">
         <div className="mb-8 border-4 border-amber-500 p-4 bg-stone-800 shadow-xl"><Book size={48} className="text-amber-50" /></div>
         <h1 className="text-3xl font-serif font-bold text-stone-900 mb-2">NARRATIVA PRO</h1>
         <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-12">Edición Olimpo</p>
-        
         <div className="space-y-4 w-full max-w-sm">
           <button onClick={handleLogin} disabled={isLoggingIn} className="w-full flex items-center justify-center gap-3 bg-white border border-stone-300 p-4 hover:bg-stone-50 shadow-sm">
             {isLoggingIn ? <Loader2 className="animate-spin"/> : <><span className="font-bold text-stone-700">Conectar con Google</span></>}
           </button>
-          
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-stone-200"></div>
-            <span className="flex-shrink-0 mx-4 text-stone-300 text-xs uppercase">O bien</span>
-            <div className="flex-grow border-t border-stone-200"></div>
-          </div>
-
           <button onClick={onDemoLogin} className="w-full flex items-center justify-center gap-3 bg-stone-800 text-amber-50 border border-stone-800 p-4 hover:bg-stone-900 shadow-sm">
             <EyeOff size={18}/> <span className="font-bold text-sm">Modo Demo (Offline)</span>
           </button>
@@ -257,7 +328,7 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
           <div className="grid gap-4">
             {stories.map(s => (
               <MarbleCard key={s.id} onClick={() => setActiveStoryId(s.id)} className="cursor-pointer hover:border-amber-400">
-                <div className="p-6"><h3 className="font-serif text-xl font-bold text-stone-900">{s.title || "Sin Título"}</h3><div className="text-xs font-bold text-stone-400 mt-1 uppercase">{s.plotArchetype}</div></div>
+                <div className="p-6"><h3 className="font-serif text-xl font-bold text-stone-900">{s.title || "Sin Título"}</h3><div className="text-xs font-bold text-stone-400 mt-1 uppercase">{(s.plotArchetypes || []).join(", ") || "Sin Arquetipo"}</div></div>
               </MarbleCard>
             ))}
           </div>
@@ -268,31 +339,248 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
 
   if (!data) return <LoadingView text="Abriendo..." />;
 
+  // Obtenemos la trama que se está editando
+  const expandedPlot = (data.plots || []).find(p => p.id === expandedPlotId);
+
   return (
-    <div className="p-6 pb-32 max-w-2xl mx-auto animate-in fade-in">
-      <div className="flex justify-between items-center mb-8">
-        <button onClick={() => setActiveStoryId(null)} className="text-xs font-bold uppercase flex items-center gap-2 text-stone-400 hover:text-stone-800"><ArrowLeft size={14}/> Volver</button>
-        <div className="flex items-center gap-4">
-           <CloudStatus isSaving={isSaving} />
-           <div className="px-2 py-1 bg-amber-50 text-[10px] font-bold text-amber-700 uppercase border border-amber-200">Editando</div>
+    <div className="p-4 md:p-8 pb-40 max-w-4xl mx-auto animate-in fade-in relative">
+      
+      {/* --- FULLSCREEN PLOT EDITOR --- */}
+      {expandedPlotId && expandedPlot && (
+        <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
+          
+          {/* Editor Header */}
+          <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-200 bg-white shadow-sm">
+             <button onClick={() => setExpandedPlotId(null)} className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
+               <ArrowLeft size={18}/> Volver
+             </button>
+             <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">Editando Trama</h2>
+             <button onClick={() => setExpandedPlotId(null)} className="text-amber-600 hover:text-amber-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-3 py-1 rounded-full">
+               <Check size={16}/> Guardar
+             </button>
+          </div>
+
+          {/* Editor Content */}
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-4xl mx-auto w-full">
+             
+             {/* Title */}
+             <input 
+               className="w-full text-3xl md:text-5xl font-serif font-bold text-stone-900 bg-transparent border-b-2 border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none placeholder:text-stone-300 mb-8"
+               value={expandedPlot.title || expandedPlot.type || ""}
+               onChange={(e) => updateExpandedPlot('title', e.target.value)}
+               placeholder="Título de la Trama"
+             />
+
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main Column: Description */}
+                <div className="lg:col-span-2 space-y-6">
+                   <div className="bg-white p-6 border border-stone-200 shadow-sm rounded-lg min-h-[50vh]">
+                      <label className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 block flex items-center gap-2">
+                        <StickyNote size={14}/> Descripción y Notas
+                      </label>
+                      <textarea 
+                        className="w-full h-full min-h-[400px] bg-transparent focus:outline-none resize-none text-lg font-serif text-stone-700 leading-relaxed"
+                        value={expandedPlot.description || ""}
+                        onChange={(e) => updateExpandedPlot('description', e.target.value)}
+                        placeholder="Escribe aquí el desarrollo de esta trama..."
+                      />
+                   </div>
+                </div>
+
+                {/* Sidebar: Characters & Actions */}
+                <div className="space-y-6">
+                   
+                   {/* Character Selector */}
+                   <div className="bg-stone-50 border border-stone-200 p-4 rounded-lg">
+                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3 block">Personajes Implicados</label>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        {(data.characters || []).map(char => {
+                          const isSelected = (expandedPlot.characterIds || []).includes(char.id);
+                          return (
+                            <button 
+                              key={char.id}
+                              onClick={() => toggleCharForExpandedPlot(char.id)}
+                              className={`w-full flex items-center gap-3 p-2 rounded-md border transition-all text-left ${isSelected ? 'bg-white border-amber-400 shadow-sm' : 'border-transparent hover:bg-white hover:border-stone-200'}`}
+                            >
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border ${isSelected ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-stone-200 text-stone-500 border-transparent'}`}>
+                                {char.name ? char.name.substring(0,2).toUpperCase() : "?"}
+                              </div>
+                              <span className={`text-sm font-medium ${isSelected ? 'text-stone-900' : 'text-stone-500'}`}>{char.name || "Sin Nombre"}</span>
+                              {isSelected && <CheckCircle2 size={14} className="ml-auto text-amber-500" />}
+                            </button>
+                          )
+                        })}
+                        {(data.characters || []).length === 0 && (
+                          <p className="text-xs text-stone-400 italic p-2">No hay personajes creados.</p>
+                        )}
+                      </div>
+                   </div>
+
+                   <button 
+                     onClick={() => { if(confirm("¿Eliminar esta trama?")) removePlot(expandedPlot.id); }}
+                     className="w-full py-3 border border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                   >
+                     <Trash2 size={14}/> Eliminar Trama
+                   </button>
+
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER DE LA HISTORIA PRINCIPAL */}
+      <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <button onClick={() => setActiveStoryId(null)} className="text-xs font-bold uppercase flex items-center gap-2 text-stone-400 hover:text-stone-800 mb-4"><ArrowLeft size={14}/> Volver</button>
+          <div className="relative group">
+            {isEditingTitle ? (
+              <input 
+                autoFocus
+                className="text-3xl md:text-5xl font-serif font-bold w-full bg-transparent border-b-2 border-amber-400 focus:outline-none text-stone-900 placeholder:text-stone-300 pb-2"
+                value={data.title||""} 
+                onChange={(e) => updateData({...data, title: e.target.value})} 
+                onBlur={() => setIsEditingTitle(false)}
+                onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
+                placeholder="TÍTULO" 
+              />
+            ) : (
+              <h1 className="text-3xl md:text-5xl font-serif font-bold text-stone-900 pb-2 border-b-2 border-transparent relative inline-block group-hover:border-stone-100 transition-all cursor-text" onClick={() => setIsEditingTitle(true)}>
+                {data.title || "Sin Título"}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsEditingTitle(true); }}
+                  className="absolute -right-8 bottom-2 p-2 text-stone-300 hover:text-amber-600 opacity-0 group-hover:opacity-100 transition-all"
+                >
+                  <Edit2 size={16} />
+                </button>
+              </h1>
+            )}
+          </div>
+        </div>
+        <CloudStatus isSaving={isSaving} />
+      </div>
+
+      {/* 2. ARQUETIPOS */}
+      <div className="mb-10">
+        <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 border-b border-stone-200 pb-2">Arquetipos de Trama</h3>
+        <div className="flex flex-wrap gap-3 items-center">
+          {(data.plotArchetypes || []).map((arch, idx) => (
+            <span key={idx} className="bg-stone-800 text-amber-50 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm">
+              {arch}
+              <button onClick={() => removeArchetype(arch)} className="hover:text-red-400 transition-colors"><X size={12} /></button>
+            </span>
+          ))}
+          
+          <div className="relative flex items-center gap-2 bg-white border border-stone-200 rounded-full px-2 py-1 shadow-sm hover:border-amber-300 transition-colors">
+            <select 
+              className="bg-transparent text-xs font-bold text-stone-600 uppercase focus:outline-none cursor-pointer py-2 px-2 pr-8 appearance-none"
+              value="" 
+              onChange={(e) => {
+                if(e.target.value === "custom") {
+                  const custom = prompt("Nombre del nuevo arquetipo:");
+                  if(custom) addArchetype(custom);
+                } else {
+                  addArchetype(e.target.value);
+                }
+              }}
+            >
+              <option value="" disabled>+ Añadir Arquetipo</option>
+              {PLOT_ARCHETYPES.map(a => <option key={a} value={a}>{a}</option>)}
+              <option value="custom" className="text-amber-700 font-bold">✨ Crear Nuevo...</option>
+            </select>
+            <div className="absolute right-3 pointer-events-none text-stone-400"><Plus size={12}/></div>
+          </div>
         </div>
       </div>
-      <div className="text-center mb-12 border-b border-stone-200 pb-12">
-        <input className="text-4xl font-serif font-bold text-center w-full bg-transparent focus:outline-none text-stone-900 placeholder:text-stone-300" value={data.title||""} onChange={(e) => updateData({...data, title: e.target.value})} placeholder="TÍTULO" />
-        <div className="flex justify-center mt-4">
-          <select className="bg-stone-50 border border-stone-200 px-4 py-2 text-xs font-bold uppercase text-stone-600 focus:outline-none" value={data.plotArchetype} onChange={(e) => updateData({...data, plotArchetype: e.target.value})}>
-            {PLOT_ARCHETYPES.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
+
+      {/* 3. TRAMAS Y PERSONAJES (MODO TARJETAS) */}
+      <div className="mb-12">
+        <div className="flex justify-between items-center mb-4 border-b border-stone-200 pb-2">
+          <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest">Tramas Activas</h3>
+          <button onClick={createNewPlot} className="text-amber-600 hover:text-amber-800 text-xs font-bold uppercase flex items-center gap-1 transition-colors bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
+            + Nueva Trama
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {(data.plots || []).map(plot => (
+            <div 
+              key={plot.id} 
+              onClick={() => setExpandedPlotId(plot.id)}
+              className="bg-white border border-stone-200 p-5 shadow-sm hover:border-amber-400 hover:shadow-md transition-all cursor-pointer relative group"
+            >
+              <div className="absolute top-2 right-2 text-stone-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Maximize2 size={16} />
+              </div>
+              <h4 className="font-serif text-lg font-bold text-stone-800 mb-3 pr-6 truncate">{plot.title || plot.type || "Trama Sin Título"}</h4>
+              
+              {/* Characters Preview */}
+              <div className="flex -space-x-2 overflow-hidden py-1 pl-1 mb-2">
+                {plot.characterIds && plot.characterIds.map(charId => {
+                  const char = (data.characters || []).find(c => c.id === charId);
+                  if (!char) return null;
+                  return (
+                    <div key={charId} className="w-8 h-8 rounded-full bg-stone-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-stone-600 shadow-sm" title={char.name}>
+                      {char.name.substring(0,2).toUpperCase()}
+                    </div>
+                  );
+                })}
+                {(!plot.characterIds || plot.characterIds.length === 0) && <span className="text-xs text-stone-400 italic">Sin personajes</span>}
+              </div>
+              
+              {/* Description Preview */}
+              {plot.description && (
+                <p className="text-xs text-stone-500 line-clamp-2 font-serif italic border-t border-stone-100 pt-2 mt-2">
+                  {plot.description}
+                </p>
+              )}
+            </div>
+          ))}
+          {(data.plots || []).length === 0 && (
+            <div className="text-stone-400 text-sm italic p-8 text-center col-span-full border-2 border-dashed border-stone-100 rounded-lg cursor-pointer hover:bg-stone-50 hover:border-stone-200 transition-colors" onClick={createNewPlot}>
+              No hay tramas. Haz clic para crear la primera.
+            </div>
+          )}
         </div>
       </div>
-      <div className="space-y-6">
-        <div className="bg-white p-4 border border-stone-200 shadow-sm">
-          <textarea className="w-full text-lg bg-transparent focus:outline-none resize-none text-center font-serif italic text-stone-700" placeholder="Escribe una idea..." onKeyPress={(e) => { if(e.key==='Enter'){ updateData({...data, ideas: [{id: Date.now(), text: e.target.value}, ...(data.ideas||[])]}); e.target.value=''; }}} />
+
+      {/* 4. IDEAS (COLLAGE) */}
+      <div>
+        <div className="flex justify-between items-center mb-6 border-b border-stone-200 pb-2">
+          <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest">Muro de Ideas</h3>
+          <button onClick={addIdea} className="text-amber-600 hover:text-amber-800 bg-amber-50 p-2 rounded-full border border-amber-100 transition-colors"><Plus size={20}/></button>
         </div>
-        {(data.ideas||[]).map(idea => (
-          <div key={idea.id} className="pl-6 border-l-2 border-amber-200"><p className="font-serif text-lg text-stone-800">{idea.text}</p><button onClick={() => updateData({...data, ideas: data.ideas.filter(i => i.id !== idea.id)})} className="text-[10px] font-bold text-stone-300 uppercase hover:text-red-500 mt-2">Borrar</button></div>
-        ))}
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {(data.ideas || []).map((idea, index) => {
+            const rotation = index % 2 === 0 ? 'rotate-1' : '-rotate-1';
+            const colors = ['bg-yellow-100', 'bg-orange-50', 'bg-pink-50', 'bg-blue-50'];
+            const bgClass = colors[idea.color || 0];
+
+            return (
+              <div 
+                key={idea.id} 
+                className={`${bgClass} p-4 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1 hover:scale-105 ${rotation} relative group min-h-[160px] flex flex-col`}
+              >
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 bg-stone-400/30 rounded-full backdrop-blur-sm shadow-sm border border-white/50"></div> 
+                <textarea 
+                  className="w-full h-full bg-transparent focus:outline-none resize-none font-serif text-stone-700 text-sm leading-relaxed text-center flex-1 placeholder:text-stone-400/50"
+                  value={idea.text}
+                  onChange={(e) => updateIdea(idea.id, e.target.value)}
+                  placeholder="Escribe..."
+                />
+                <button 
+                  onClick={() => updateData({...data, ideas: data.ideas.filter(i => i.id !== idea.id)})}
+                  className="absolute bottom-2 right-2 text-stone-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 size={14}/>
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
+
     </div>
   );
 };
