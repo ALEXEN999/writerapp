@@ -20,7 +20,7 @@ import {
   orderBy 
 } from "firebase/firestore";
 import { 
-  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2, Edit2, X, StickyNote, LayoutGrid, Maximize2, Check
+  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2, Edit2, X, StickyNote, LayoutGrid, Maximize2, Check, Filter, Crown, Shield, Sparkles
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN FIREBASE ---
@@ -49,6 +49,13 @@ try {
 }
 
 const appId = YOUR_FIREBASE_CONFIG.projectId;
+
+// --- Listas de Opciones para Personajes ---
+const CHAR_IMPORTANCE = ["Principal", "Secundario", "Terciario"];
+const CHAR_RACES = ["Híbrido", "Semidios", "Dios/a", "Demonio", "Súccubo", "Humano", "Elfo", "Enano", "Sirena", "Draconiano", "Licántropo", "Vampiro", "Titán", "Ninfa"];
+const CHAR_WORLDS = ["Tierra", "Gaia", "Venus", "Hydor", "Midgar", "Avalon", "Infierno", "Olimpo", "Asgard", "Duat", "Divino"];
+const CHAR_CSM = ["Maestro", "Agente", "Lider", "No"];
+const CHAR_NOBLE = ["Si", "No"];
 
 // --- Plantillas ---
 const STRUCTURE_TEMPLATES = {
@@ -83,9 +90,9 @@ const MarbleCard = ({ children, header, onMore, onClick, className="" }) => (
   <div onClick={onClick} className={`relative bg-white border border-stone-200 shadow-sm mb-6 transition-all hover:shadow-md hover:border-amber-200 group ${onClick ? 'cursor-pointer' : ''} ${className}`}>
     <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
     {(header || onMore) && (
-      <div className="flex justify-between items-center p-6 border-b border-stone-100 bg-stone-50/50">
-        <div className="font-serif font-bold text-stone-800 text-lg uppercase tracking-widest truncate pr-4">{header}</div>
-        {onMore && <button onClick={(e) => { e.stopPropagation(); onMore(); }} className="text-stone-400 hover:text-amber-600"><MoreHorizontal size={20}/></button>}
+      <div className="flex justify-between items-center p-4 border-b border-stone-100 bg-stone-50/50">
+        <div className="font-serif font-bold text-stone-800 text-base uppercase tracking-widest truncate pr-4">{header}</div>
+        {onMore && <button onClick={(e) => { e.stopPropagation(); onMore(); }} className="text-stone-400 hover:text-amber-600"><MoreHorizontal size={18}/></button>}
       </div>
     )}
     <div className="p-1">{children}</div>
@@ -99,8 +106,8 @@ const PillarButton = ({ onClick, children, variant="primary", icon: Icon, disabl
     ghost: `bg-transparent text-stone-500 border-transparent hover:bg-stone-100 hover:text-stone-900`
   };
   return (
-    <button onClick={onClick} disabled={disabled} className={`px-6 py-3 font-serif text-xs font-bold uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 border disabled:opacity-50 ${variants[variant] || variants.primary} ${className}`}>
-      {Icon && <Icon size={14} />} {children}
+    <button onClick={onClick} disabled={disabled} className={`px-4 py-2 font-serif text-[10px] font-bold uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 border disabled:opacity-50 ${variants[variant] || variants.primary} ${className}`}>
+      {Icon && <Icon size={12} />} {children}
     </button>
   );
 };
@@ -127,6 +134,74 @@ const CloudStatus = ({ isSaving }) => (
     )}
   </div>
 );
+
+// Nuevo componente para la Tarjeta de Personaje estilo "Full Card"
+const CharacterCard = ({ char, onClick }) => {
+  // Generar un color de fondo suave basado en el nombre para dar variedad si no hay foto real
+  const getBgColor = (name) => {
+    const colors = ['bg-stone-200', 'bg-stone-300', 'bg-amber-100', 'bg-orange-100', 'bg-blue-100', 'bg-emerald-100'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  return (
+    <div 
+      onClick={onClick}
+      className="relative aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group bg-white border border-stone-200"
+    >
+      {/* Full Background Avatar / Placeholder */}
+      <div className={`absolute inset-0 ${getBgColor(char.name || "")} flex items-center justify-center`}>
+         <span className="font-serif text-6xl font-bold text-stone-400/50 select-none">
+            {char.name ? char.name.substring(0, 1).toUpperCase() : "?"}
+         </span>
+      </div>
+
+      {/* Badges (Top) */}
+      <div className="absolute top-2 right-2 flex gap-1">
+        {char.noble === "Si" && (
+          <div className="p-1.5 bg-amber-400 text-white rounded-full shadow-sm" title="Noble">
+            <Crown size={12} fill="currentColor" />
+          </div>
+        )}
+        {char.csm && char.csm !== "No" && (
+          <div className="p-1.5 bg-stone-800 text-white rounded-full shadow-sm" title={`CSM: ${char.csm}`}>
+            <Shield size={12} />
+          </div>
+        )}
+      </div>
+
+      {/* Name Overlay (Bottom) */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 pt-12 bg-gradient-to-t from-stone-900/90 via-stone-900/60 to-transparent text-white">
+        <h4 className="font-serif font-bold text-lg leading-tight truncate drop-shadow-md">{char.name || "Sin Nombre"}</h4>
+        <div className="flex justify-between items-end mt-1">
+           <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300 truncate pr-2">
+             {char.race || "Desconocido"}
+           </span>
+           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+             <Maximize2 size={14} className="text-white" />
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SquareAvatar = ({ char, size = "md" }) => {
+  const sizes = { sm: "w-10 h-10 text-xs", md: "w-16 h-16 text-xl", lg: "w-24 h-24 text-3xl" };
+  return (
+    <div className={`${sizes[size]} bg-stone-100 border border-stone-300 flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden rounded-sm`}>
+      {char.noble === "Si" && (
+        <div className="absolute top-0 right-0 p-0.5 bg-amber-400 text-white rounded-bl-md shadow-sm z-10">
+          <Crown size={10} fill="currentColor" />
+        </div>
+      )}
+      <span className="font-serif font-bold text-stone-600">
+        {char?.name ? char.name.substring(0, 2).toUpperCase() : "?"}
+      </span>
+    </div>
+  );
+};
 
 // --- Módulos ---
 const StructureView = ({ data, updateData }) => {
@@ -178,28 +253,207 @@ const WorldView = ({ data, updateData }) => {
   );
 };
 
+// --- NUEVA VISTA DE PERSONAJES (FILTROS Y GRID LIMPIO) ---
 const CharactersView = ({ data, updateData }) => {
+  const [filters, setFilters] = useState({
+    importance: "Todas",
+    race: "Todas",
+    world: "Todos",
+    csm: "Todos",
+    noble: "Todos"
+  });
+  
+  const [expandedCharId, setExpandedCharId] = useState(null);
+
   if (!data) return <LoadingView />;
-  const updateChar = (id, f, v) => updateData({ ...data, characters: data.characters.map(c => c.id === id ? { ...c, [f]: v } : c) });
+
+  const addChar = () => {
+    const newChar = { 
+      id: Date.now(), 
+      name: "Nuevo Personaje", 
+      importance: "Secundario", 
+      race: "Humano", 
+      world: "Tierra", 
+      csm: "No", 
+      noble: "No",
+      charPlot: "",
+      charSubplot: ""
+    };
+    updateData({ ...data, characters: [newChar, ...data.characters] });
+    setExpandedCharId(newChar.id);
+  };
+
+  const updateChar = (id, field, val) => {
+    updateData({ ...data, characters: data.characters.map(c => c.id === id ? { ...c, [field]: val } : c) });
+  };
+
+  const deleteChar = (id) => { 
+    if(confirm("¿Eliminar personaje?")) {
+        updateData({ ...data, characters: data.characters.filter(c => c.id !== id) }); 
+        setExpandedCharId(null);
+    }
+  };
+
+  // Lógica de Filtrado
+  const filteredChars = (data.characters || []).filter(char => {
+    if (filters.importance !== "Todas" && char.importance !== filters.importance) return false;
+    if (filters.race !== "Todas" && char.race !== filters.race) return false;
+    if (filters.world !== "Todos" && char.world !== filters.world) return false;
+    if (filters.csm !== "Todos" && char.csm !== filters.csm) return false;
+    if (filters.noble !== "Todos" && char.noble !== filters.noble) return false;
+    return true;
+  });
+
+  const FilterSelect = ({ label, value, options, onChange }) => (
+    <div className="flex flex-col min-w-[120px]">
+      <label className="text-[9px] font-bold text-stone-400 uppercase mb-1 ml-1">{label}</label>
+      <select 
+        className="bg-white border border-stone-200 text-stone-700 text-xs rounded-md p-2 focus:outline-none focus:border-amber-400 cursor-pointer"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value={label.endsWith('s') ? "Todos" : "Todas"}>Todas</option>
+        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+      </select>
+    </div>
+  );
+
+  // --- EDITOR DE PERSONAJE FULLSCREEN ---
+  const expandedChar = (data.characters || []).find(c => c.id === expandedCharId);
+
+  if (expandedCharId && expandedChar) {
+      return (
+        <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
+             {/* Header */}
+             <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-200 bg-white shadow-sm">
+                 <button onClick={() => setExpandedCharId(null)} className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
+                   <ArrowLeft size={18}/> Volver
+                 </button>
+                 <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">Ficha de Personaje</h2>
+                 <button onClick={() => setExpandedCharId(null)} className="text-amber-600 hover:text-amber-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-3 py-1 rounded-full">
+                   <Check size={16}/> Guardar
+                 </button>
+             </div>
+
+             {/* Content */}
+             <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
+                <div className="flex flex-col items-center mb-8">
+                    <div className="transform scale-150 mb-4">
+                        <SquareAvatar char={expandedChar} size="lg" />
+                    </div>
+                    <input 
+                      className="font-serif font-bold text-3xl text-center text-stone-900 bg-transparent border-b border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none w-full placeholder:text-stone-300"
+                      value={expandedChar.name} 
+                      onChange={(e) => updateChar(expandedChar.id, 'name', e.target.value)}
+                      placeholder="Nombre del Personaje"
+                    />
+                </div>
+
+                <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm space-y-6">
+                    {/* Selectors Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="flex flex-col">
+                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Importancia</label>
+                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.importance} onChange={(e) => updateChar(expandedChar.id, 'importance', e.target.value)}>
+                                {CHAR_IMPORTANCE.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Raza</label>
+                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.race} onChange={(e) => updateChar(expandedChar.id, 'race', e.target.value)}>
+                                {CHAR_RACES.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Mundo</label>
+                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.world} onChange={(e) => updateChar(expandedChar.id, 'world', e.target.value)}>
+                                {CHAR_WORLDS.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">CSM</label>
+                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.csm} onChange={(e) => updateChar(expandedChar.id, 'csm', e.target.value)}>
+                                {CHAR_CSM.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Noble</label>
+                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.noble} onChange={(e) => updateChar(expandedChar.id, 'noble', e.target.value)}>
+                                {CHAR_NOBLE.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Text Areas */}
+                    <div className="space-y-4 pt-4 border-t border-stone-100">
+                        <div>
+                            <label className="text-xs font-bold text-amber-700 uppercase mb-2 block">Trama Personal (Deseo)</label>
+                            <textarea 
+                                className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y"
+                                value={expandedChar.charPlot || ""}
+                                onChange={(e) => updateChar(expandedChar.id, 'charPlot', e.target.value)}
+                                placeholder="¿Qué desea conseguir?"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">Subtrama (Conflicto)</label>
+                            <textarea 
+                                className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y"
+                                value={expandedChar.charSubplot || ""}
+                                onChange={(e) => updateChar(expandedChar.id, 'charSubplot', e.target.value)}
+                                placeholder="¿Qué le impide conseguirlo?"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="pt-4">
+                        <button onClick={() => deleteChar(expandedChar.id)} className="w-full py-3 text-red-500 border border-red-200 hover:bg-red-50 rounded uppercase text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+                            <Trash2 size={16}/> Eliminar Personaje
+                        </button>
+                    </div>
+                </div>
+             </div>
+        </div>
+      );
+  }
+
   return (
-    <div className="p-6 pb-32 space-y-8 animate-in fade-in">
-      <div className="flex justify-end"><PillarButton onClick={() => updateData({ ...data, characters: [...(data.characters||[]), { id: Date.now(), name: "Nuevo", species: data.species?.[0]||"" }] })} variant="gold" icon={Plus}>Personaje</PillarButton></div>
-      {(data.characters || []).map(char => (
-        <MarbleCard key={char.id} className="pt-8">
-          <div className="text-center mb-6">
-            <input className="text-2xl font-serif font-bold text-center w-full bg-transparent focus:outline-none" value={char.name} onChange={(e) => updateChar(char.id, 'name', e.target.value)} />
-            <select className="text-xs font-bold uppercase text-stone-400 bg-transparent mt-2 text-center block w-full" value={char.species} onChange={(e) => updateChar(char.id, 'species', e.target.value)}>
-              <option value="">Especie...</option>
-              {(data.species || []).map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+    <div className="p-4 md:p-8 pb-40 animate-in fade-in">
+      
+      {/* BARRA DE FILTROS */}
+      <div className="mb-8 bg-stone-50 border border-stone-200 p-4 rounded-lg overflow-x-auto shadow-inner">
+        <div className="flex items-center gap-2 mb-3 text-amber-700 font-bold text-xs uppercase tracking-wider">
+          <Filter size={14} /> Filtros de Galería
+        </div>
+        <div className="flex gap-3 pb-2">
+          <FilterSelect label="Importancia" value={filters.importance} options={CHAR_IMPORTANCE} onChange={v => setFilters({...filters, importance: v})} />
+          <FilterSelect label="Raza" value={filters.race} options={CHAR_RACES} onChange={v => setFilters({...filters, race: v})} />
+          <FilterSelect label="Mundo" value={filters.world} options={CHAR_WORLDS} onChange={v => setFilters({...filters, world: v})} />
+          <FilterSelect label="CSM" value={filters.csm} options={CHAR_CSM} onChange={v => setFilters({...filters, csm: v})} />
+          <FilterSelect label="Noble" value={filters.noble} options={CHAR_NOBLE} onChange={v => setFilters({...filters, noble: v})} />
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-serif font-bold text-xl text-stone-800">Galería ({filteredChars.length})</h3>
+        <PillarButton onClick={addChar} variant="gold" icon={Plus}>Añadir Personaje</PillarButton>
+      </div>
+
+      {/* GRID DE PERSONAJES (NUEVO DISEÑO) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {filteredChars.map(char => (
+          <CharacterCard 
+            key={char.id} 
+            char={char} 
+            onClick={() => setExpandedCharId(char.id)} 
+          />
+        ))}
+        {filteredChars.length === 0 && (
+          <div className="col-span-full text-center py-12 text-stone-400 italic border-2 border-dashed border-stone-200 rounded-lg">
+            No se encontraron personajes con estos filtros.
           </div>
-          <div className="grid grid-cols-2 gap-4 px-4 pb-4">
-            <textarea className="bg-stone-50 p-2 text-sm font-serif resize-none h-20 border border-stone-100 focus:border-amber-300" placeholder="Deseo..." value={char.charPlot || ""} onChange={(e) => updateChar(char.id, 'charPlot', e.target.value)} />
-            <textarea className="bg-stone-50 p-2 text-sm font-serif resize-none h-20 border border-stone-100 focus:border-amber-300" placeholder="Miedo..." value={char.charSubplot || ""} onChange={(e) => updateChar(char.id, 'charSubplot', e.target.value)} />
-          </div>
-          <button onClick={() => updateData({...data, characters: data.characters.filter(c => c.id !== char.id)})} className="absolute top-2 right-2 text-stone-300 hover:text-red-500"><Trash2 size={14}/></button>
-        </MarbleCard>
-      ))}
+        )}
+      </div>
     </div>
   );
 };
@@ -372,22 +626,8 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
              />
 
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Column: Description */}
-                <div className="lg:col-span-2 space-y-6">
-                   <div className="bg-white p-6 border border-stone-200 shadow-sm rounded-lg min-h-[50vh]">
-                      <label className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 block flex items-center gap-2">
-                        <StickyNote size={14}/> Descripción y Notas
-                      </label>
-                      <textarea 
-                        className="w-full h-full min-h-[400px] bg-transparent focus:outline-none resize-none text-lg font-serif text-stone-700 leading-relaxed"
-                        value={expandedPlot.description || ""}
-                        onChange={(e) => updateExpandedPlot('description', e.target.value)}
-                        placeholder="Escribe aquí el desarrollo de esta trama..."
-                      />
-                   </div>
-                </div>
-
-                {/* Sidebar: Characters & Actions */}
+                
+                {/* Sidebar: Characters & Actions (Moved First for Mobile View) */}
                 <div className="space-y-6">
                    
                    {/* Character Selector */}
@@ -424,6 +664,22 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
                    </button>
 
                 </div>
+
+                {/* Main Column: Description */}
+                <div className="lg:col-span-2 space-y-6">
+                   <div className="bg-white p-6 border border-stone-200 shadow-sm rounded-lg min-h-[50vh]">
+                      <label className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 block flex items-center gap-2">
+                        <StickyNote size={14}/> Descripción y Notas
+                      </label>
+                      <textarea 
+                        className="w-full h-full min-h-[400px] bg-transparent focus:outline-none resize-none text-lg font-serif text-stone-700 leading-relaxed"
+                        value={expandedPlot.description || ""}
+                        onChange={(e) => updateExpandedPlot('description', e.target.value)}
+                        placeholder="Escribe aquí el desarrollo de esta trama..."
+                      />
+                   </div>
+                </div>
+
              </div>
           </div>
         </div>
@@ -662,7 +918,7 @@ export default function NarrativaOlympus() {
     }
   };
 
-  const navItems = [ { id: 'structure', label: 'Estructura', icon: Columns }, { id: 'world', label: 'Mundo', icon: Globe }, { id: 'characters', label: 'Elenco', icon: Users }, { id: 'story', label: 'Historia', icon: Scroll } ];
+  const navItems = [ { id: 'structure', label: 'Estructura', icon: Columns }, { id: 'world', label: 'Mundo', icon: Globe }, { id: 'characters', label: 'Personajes', icon: Users }, { id: 'story', label: 'Historia', icon: Scroll } ];
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#fdfbf7] text-stone-800 font-sans md:max-w-md md:mx-auto md:border-x md:border-stone-200 md:shadow-2xl overflow-hidden selection:bg-amber-200">
