@@ -14,6 +14,7 @@ import {
   doc, 
   setDoc, 
   addDoc, 
+  deleteDoc, // IMPORTANTE: Añadido deleteDoc
   onSnapshot, 
   serverTimestamp, 
   query, 
@@ -935,482 +936,17 @@ const StructureView = ({ data, updateData }) => {
   );
 };
 
-const WorldView = ({ data, updateData }) => {
-  const [activeTab, setActiveTab] = useState('general');
-  const [expandedItemId, setExpandedItemId] = useState(null);
-  const [editingItem, setEditingItem] = useState(false);
-  const [activeListType, setActiveListType] = useState(null);
-
-  if (!data) return <LoadingView />;
-
-  const addItem = (listName) => {
-    const newItem = { id: Date.now(), name: `Nuevo ${listName === 'species' ? 'Especie' : 'Mundo'}`, imageUrl: "" };
-    updateData({ ...data, [listName]: [...(data[listName] || []), newItem] });
-    setExpandedItemId(newItem.id);
-    setActiveListType(listName);
-    setEditingItem(true);
-  };
-
-  const updateItem = (listName, id, field, val) => {
-    updateData({ 
-        ...data, 
-        [listName]: data[listName].map(i => i.id === id ? { ...i, [field]: val } : i) 
-    });
-  };
-
-  const deleteItem = (listName, id) => {
-      if(confirm("¿Eliminar?")) {
-        updateData({ ...data, [listName]: data[listName].filter(i => i.id !== id) });
-        setExpandedItemId(null);
-      }
-  };
-
-  const speciesList = data.species || [];
-  const worldsList = data.worlds || [];
-  const expandedItem = expandedItemId ? (activeListType === 'species' ? speciesList : worldsList).find(i => i.id === expandedItemId) : null;
-
-  return (
-    <div className="p-4 md:p-6 pb-32 space-y-12 animate-in fade-in">
-        <section>
-            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-200 pb-2 flex items-center gap-2">
-               <Globe size={14} /> Mundos
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div onClick={() => addItem('worlds')} className="aspect-square border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:text-amber-600 hover:border-amber-400 cursor-pointer transition-all group bg-stone-50/50">
-                    <Plus size={24} className="mb-2 group-hover:scale-110 transition-transform"/>
-                    <span className="text-[9px] font-bold uppercase tracking-wider">Nuevo Mundo</span>
-                </div>
-                {worldsList.map(item => (
-                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('worlds'); setEditingItem(false); }} className="aspect-square bg-white border border-stone-300 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all overflow-hidden hover:border-amber-400">
-                            {item.imageUrl ? (
-                                <img src={item.imageUrl} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity" />
-                            ) : (
-                                <Globe size={24} className="text-stone-300 mb-3 group-hover:text-amber-400 transition-colors relative z-10"/>
-                            )}
-                            <h4 className="font-serif font-bold text-lg text-stone-800 leading-tight relative z-10">{item.name}</h4>
-                            <div className="absolute bottom-2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider relative z-10">Ver Detalles</div>
-                        </div>
-                ))}
-            </div>
-        </section>
-
-        <section>
-            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-200 pb-2 flex items-center gap-2">
-               <Dna size={14} /> Especies
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div onClick={() => addItem('species')} className="aspect-square border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:text-amber-600 hover:border-amber-400 cursor-pointer transition-all group bg-stone-50/50">
-                    <Plus size={24} className="mb-2 group-hover:scale-110 transition-transform"/>
-                    <span className="text-[9px] font-bold uppercase tracking-wider">Nueva Especie</span>
-                </div>
-                {speciesList.map(item => (
-                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('species'); setEditingItem(false); }} className="aspect-square bg-white border border-stone-300 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all overflow-hidden hover:border-amber-400">
-                             {item.imageUrl ? (
-                                <img src={item.imageUrl} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity" />
-                            ) : (
-                                <Dna size={24} className="text-stone-300 mb-3 group-hover:text-amber-400 transition-colors relative z-10"/>
-                            )}
-                            <h4 className="font-serif font-bold text-lg text-stone-800 leading-tight relative z-10">{item.name}</h4>
-                            <div className="absolute bottom-2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider relative z-10">Ver Detalles</div>
-                        </div>
-                ))}
-            </div>
-        </section>
-
-        <section>
-             <MarbleCard header="Leyes de la Realidad">
-                <textarea className="w-full p-6 min-h-[300px] bg-transparent focus:outline-none font-serif text-lg leading-relaxed resize-none text-stone-800 placeholder:text-stone-300" placeholder="Escribe aquí la cosmogonía, física y magia de tu universo..." value={data.diegesis || ""} onChange={(e) => updateData({...data, diegesis: e.target.value})} />
-            </MarbleCard>
-        </section>
-
-        {expandedItemId && activeListType && (
-            <EntityEditor 
-                listName={activeListType} 
-                item={expandedItem} 
-                data={data}
-                updateItem={updateItem}
-                deleteItem={deleteItem}
-                setExpandedItemId={setExpandedItemId}
-                editingItem={editingItem}
-                setEditingItem={setEditingItem}
-            />
-        )}
-    </div>
-  );
-};
-
-// --- NUEVA VISTA DE PERSONAJES ---
-const CharactersView = ({ data, updateData }) => {
-    // PROTECCIÓN CONTRA OBJETOS EN GETNAMES
-    const getNames = (list) => (list || []).map(i => {
-        if (typeof i === 'string') return i;
-        return i?.name || "Sin Nombre";
-    }).filter(n => typeof n === 'string');
-
-    const dynamicRaces = getNames(data.species).length > 0 ? getNames(data.species) : DEFAULT_RACES;
-    const dynamicWorlds = getNames(data.worlds).length > 0 ? getNames(data.worlds) : DEFAULT_WORLDS;
-
-  const [filters, setFilters] = useState({
-    importance: "Todas",
-    race: "Todas",
-    world: "Todos",
-    csm: "Todos",
-    noble: "Todos"
-  });
-  
-  const [expandedCharId, setExpandedCharId] = useState(null);
-  const [isEditing, setIsEditing] = useState(false); 
-  const fileInputRef = useRef(null); 
-
-  if (!data) return <LoadingView />;
-
-  const addChar = () => {
-    const newChar = { 
-      id: Date.now(), 
-      name: "Nuevo Personaje", 
-      importance: "Secundario", 
-      race: "Humano", 
-      world: "Tierra", 
-      csm: "No", 
-      noble: "No",
-      showPersonality: false, personalityText: "",
-      showAppearance: false, appearanceText: "",
-      showClothing: false, clothingText: "",
-      showPowers: false, powersText: "",
-      showHistory: false, historyText: "",
-      characterPlots: [], imageUrl: ""
-    };
-    updateData({ ...data, characters: [newChar, ...data.characters] });
-    setExpandedCharId(newChar.id);
-    setIsEditing(true); 
-  };
-
-  const updateChar = (id, field, val) => {
-    updateData({ ...data, characters: data.characters.map(c => c.id === id ? { ...c, [field]: val } : c) });
-  };
-
-  const addCharacterPlot = (charId) => {
-    const char = data.characters.find(c => c.id === charId);
-    if(!char) return;
-    const newPlot = { id: Date.now(), text: "" };
-    updateChar(charId, 'characterPlots', [...(char.characterPlots || []), newPlot]);
-  };
-
-  const updateCharacterPlot = (charId, plotId, text) => {
-     const char = data.characters.find(c => c.id === charId);
-     if(!char) return;
-     const newPlots = (char.characterPlots || []).map(p => p.id === plotId ? { ...p, text } : p);
-     updateChar(charId, 'characterPlots', newPlots);
-  };
-
-  const deleteCharacterPlot = (charId, plotId) => {
-     const char = data.characters.find(c => c.id === charId);
-     if(!char) return;
-     const newPlots = (char.characterPlots || []).filter(p => p.id !== plotId);
-     updateChar(charId, 'characterPlots', newPlots);
-  };
-
-  const deleteChar = (id) => { 
-    if(confirm("¿Eliminar personaje?")) {
-        updateData({ ...data, characters: data.characters.filter(c => c.id !== id) }); 
-        setExpandedCharId(null);
-    }
-  };
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-        const compressedBase64 = await compressImage(file);
-        updateChar(expandedCharId, 'imageUrl', compressedBase64);
-    } catch (error) {
-        console.error(error);
-        alert("Error al procesar la imagen.");
-    }
-  };
-
-  // Lógica de Filtrado
-  const filteredChars = (data.characters || []).filter(char => {
-    if (filters.importance !== "Todas" && char.importance !== filters.importance) return false;
-    if (filters.race !== "Todas" && char.race !== filters.race) return false;
-    if (filters.world !== "Todos" && char.world !== filters.world) return false;
-    if (filters.csm !== "Todos" && char.csm !== filters.csm) return false;
-    if (filters.noble !== "Todos" && char.noble !== filters.noble) return false;
-    return true;
-  });
-
-  const FilterSelect = ({ label, value, options, onChange }) => (
-    <div className="flex flex-col w-full">
-      <label className="text-[8px] font-bold text-stone-400 uppercase mb-1 ml-1 tracking-widest">{label}</label>
-      <select 
-        className="bg-white border border-stone-300 text-stone-700 text-[10px] font-bold p-1.5 focus:outline-none focus:border-amber-400 cursor-pointer w-full rounded-none"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value={label.endsWith('s') ? "Todos" : "Todas"}>Todas</option>
-        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-      </select>
-    </div>
-  );
-
-  const DataBadge = ({ label, value }) => (
-    <div className="flex flex-col bg-stone-50 p-2 border border-stone-200">
-        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-1">{label}</span>
-        <span className="text-xs font-serif font-bold text-stone-800">{value || "-"}</span>
-    </div>
-  );
-
-  // --- EDITOR DE PERSONAJE FULLSCREEN ---
-  const expandedChar = (data.characters || []).find(c => c.id === expandedCharId);
-
-  if (expandedCharId && expandedChar) {
-      const sections = [
-        { key: 'Personality', label: '1. Personalidad', icon: Brain },
-        { key: 'Appearance', label: '2. Aspecto', icon: Eye },
-        { key: 'Clothing', label: '3. Vestimenta', icon: Shirt },
-        { key: 'Powers', label: '4. Poderes', icon: Zap },
-        { key: 'History', label: '5. Historia', icon: History },
-      ];
-
-      return (
-        <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
-             {/* Header */}
-             <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-200 bg-white shadow-sm">
-                 <button onClick={() => { setExpandedCharId(null); setIsEditing(false); }} className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
-                   <ArrowLeft size={18}/> Volver
-                 </button>
-                 
-                 {isEditing ? (
-                     <button onClick={() => setIsEditing(false)} className="text-amber-600 hover:text-amber-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-4 py-2 border border-amber-200 rounded-none hover:bg-amber-50">
-                        <Check size={16}/> Listo
-                     </button>
-                 ) : (
-                     <button onClick={() => setIsEditing(true)} className="text-stone-500 hover:text-amber-600 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-white px-4 py-2 border border-stone-200 hover:border-amber-400 transition-all rounded-none">
-                        <Edit2 size={14}/> Editar
-                     </button>
-                 )}
-             </div>
-
-             {/* Content */}
-             <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
-                <div className="flex flex-col items-center mb-8">
-                    <div className="transform mb-6 shadow-lg border border-stone-300 bg-white p-1 relative">
-                        <SquareAvatar 
-                            char={expandedChar} 
-                            size="xl" 
-                            editable={isEditing}
-                            onClick={() => isEditing && fileInputRef.current.click()}
-                        />
-                        {expandedChar.imageUrl && (
-                           <div className="absolute -bottom-6 left-0 right-0 text-center">
-                             <span className="text-[8px] text-stone-400 flex items-center justify-center gap-1">
-                               <HardDrive size={8} /> {getImageSizeKB(expandedChar.imageUrl)} KB
-                             </span>
-                           </div>
-                        )}
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
-                    </div>
-                    {isEditing ? (
-                        <input 
-                          className="font-serif font-bold text-3xl text-center text-stone-900 bg-transparent border-b-2 border-transparent hover:border-stone-300 focus:border-amber-500 focus:outline-none w-full placeholder:text-stone-300 pb-1 rounded-none"
-                          value={expandedChar.name} 
-                          onChange={(e) => updateChar(expandedChar.id, 'name', e.target.value)}
-                          placeholder="Nombre del Personaje"
-                        />
-                    ) : (
-                        <h1 className="font-serif font-bold text-4xl text-center text-stone-900 tracking-tight">{expandedChar.name || "Sin Nombre"}</h1>
-                    )}
-                </div>
-
-                <div className="bg-white border border-stone-200 p-8 shadow-sm space-y-10">
-                    
-                    {/* MODO EDICIÓN */}
-                    {isEditing ? (
-                        <>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                                <div className="flex flex-col">
-                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Importancia</label>
-                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.importance} onChange={(e) => updateChar(expandedChar.id, 'importance', e.target.value)}>
-                                        {CHAR_IMPORTANCE.map(o => <option key={o} value={o}>{o}</option>)}
-                                    </select>
-                                </div>
-                                <div className="flex flex-col">
-                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Raza</label>
-                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.race} onChange={(e) => updateChar(expandedChar.id, 'race', e.target.value)}>
-                                        {dynamicRaces.map(o => <option key={o} value={o}>{o}</option>)}
-                                    </select>
-                                </div>
-                                <div className="flex flex-col">
-                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Mundo</label>
-                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.world} onChange={(e) => updateChar(expandedChar.id, 'world', e.target.value)}>
-                                        {dynamicWorlds.map(o => <option key={o} value={o}>{o}</option>)}
-                                    </select>
-                                </div>
-                                <div className="flex flex-col">
-                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">CSM</label>
-                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.csm} onChange={(e) => updateChar(expandedChar.id, 'csm', e.target.value)}>
-                                        {CHAR_CSM.map(o => <option key={o} value={o}>{o}</option>)}
-                                    </select>
-                                </div>
-                                <div className="flex flex-col">
-                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Noble</label>
-                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.noble} onChange={(e) => updateChar(expandedChar.id, 'noble', e.target.value)}>
-                                        {CHAR_NOBLE.map(o => <option key={o} value={o}>{o}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            {/* SECCIONES DINÁMICAS (TOGGLES) */}
-                            <div className="pt-8 border-t border-stone-100">
-                                <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4">Detalles Adicionales</h4>
-                                <div className="flex flex-wrap gap-3 mb-6">
-                                    {sections.map(sec => (
-                                        <button
-                                            key={sec.key}
-                                            onClick={() => updateChar(expandedChar.id, `show${sec.key}`, !expandedChar[`show${sec.key}`])}
-                                            className={`px-4 py-2 text-[10px] font-bold uppercase border transition-all flex items-center gap-2 ${expandedChar[`show${sec.key}`] ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-400 border-stone-200 hover:border-amber-500'}`}
-                                        >
-                                            <sec.icon size={12} /> {sec.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {sections.map(sec => expandedChar[`show${sec.key}`] && (
-                                    <div key={sec.key} className="mb-6 animate-in fade-in slide-in-from-top-2">
-                                        <label className="text-[10px] font-bold text-amber-700 uppercase mb-2 block flex items-center gap-2">
-                                           <sec.icon size={12} /> {sec.label}
-                                        </label>
-                                        <textarea 
-                                            className="w-full p-4 bg-stone-50 border border-stone-300 focus:border-amber-500 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y text-sm rounded-none"
-                                            value={expandedChar[`${sec.key.toLowerCase()}Text`] || ""}
-                                            onChange={(e) => updateChar(expandedChar.id, `${sec.key.toLowerCase()}Text`, e.target.value)}
-                                            placeholder={`Escribe sobre ${sec.label.toLowerCase()}...`}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* TRAMAS DINÁMICAS */}
-                            <div className="pt-8 border-t border-stone-200">
-                                <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                   <Swords size={14}/> Tramas del Personaje
-                                </h4>
-                                <div className="space-y-4">
-                                    {(expandedChar.characterPlots || []).map(plot => (
-                                        <div key={plot.id} className="flex gap-3 items-start">
-                                            <textarea 
-                                                className="flex-1 p-3 bg-white border border-stone-300 text-sm font-serif text-stone-700 focus:border-amber-500 focus:outline-none resize-none h-20 rounded-none"
-                                                value={plot.text}
-                                                onChange={(e) => updateCharacterPlot(expandedChar.id, plot.id, e.target.value)}
-                                                placeholder="Describe una trama específica para este personaje..."
-                                            />
-                                            <button onClick={() => deleteCharacterPlot(expandedChar.id, plot.id)} className="text-stone-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
-                                        </div>
-                                    ))}
-                                    <button onClick={() => addCharacterPlot(expandedChar.id)} className="text-xs font-bold text-amber-600 hover:text-amber-800 uppercase flex items-center gap-2 mt-2 bg-amber-50 px-4 py-2 border border-amber-100 hover:border-amber-300 w-full justify-center transition-colors">
-                                        <Plus size={14}/> Agregar Trama
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="pt-10">
-                                <button onClick={() => deleteChar(expandedChar.id)} className="w-full py-4 text-red-600 border border-red-200 hover:bg-red-50 uppercase text-xs font-bold flex items-center justify-center gap-2 transition-colors rounded-none">
-                                    <Trash2 size={16}/> Eliminar Personaje
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        /* MODO LECTURA */
-                        <>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <DataBadge label="Importancia" value={expandedChar.importance} />
-                                <DataBadge label="Raza" value={expandedChar.race} />
-                                <DataBadge label="Mundo" value={expandedChar.world} />
-                                <DataBadge label="CSM" value={expandedChar.csm} />
-                                <DataBadge label="Noble" value={expandedChar.noble} />
-                            </div>
-
-                            <div className="space-y-8 pt-8 border-t border-stone-100">
-                                {sections.map(sec => expandedChar[`show${sec.key}`] && expandedChar[`${sec.key.toLowerCase()}Text`] && (
-                                    <div key={sec.key}>
-                                        <h4 className="text-[10px] font-bold text-amber-800/60 uppercase mb-2 tracking-widest flex items-center gap-2">
-                                           <sec.icon size={12} /> {sec.label}
-                                        </h4>
-                                        <p className="font-serif text-base text-stone-800 leading-relaxed whitespace-pre-wrap pl-1 border-l-2 border-amber-200">
-                                            {expandedChar[`${sec.key.toLowerCase()}Text`]}
-                                        </p>
-                                    </div>
-                                ))}
-                                
-                                {(expandedChar.characterPlots || []).length > 0 && (
-                                   <div className="mt-8 pt-8 border-t border-stone-100">
-                                      <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-4 tracking-widest flex items-center gap-2">
-                                         <Swords size={14}/> Tramas Activas
-                                      </h4>
-                                      <ul className="space-y-3">
-                                         {expandedChar.characterPlots.map(p => (
-                                            <li key={p.id} className="p-4 bg-stone-50 border-l-4 border-amber-500 text-base font-serif text-stone-800 shadow-sm">
-                                                {p.text}
-                                            </li>
-                                         ))}
-                                      </ul>
-                                   </div>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </div>
-             </div>
-        </div>
-      );
-  }
-
-  return (
-    <div className="p-4 md:p-8 pb-40 animate-in fade-in">
-      <div className="mb-8 bg-stone-50 border border-stone-200 p-4 shadow-inner">
-        <div className="flex items-center gap-2 mb-3 text-amber-700 font-bold text-xs uppercase tracking-wider">
-          <Filter size={14} /> Filtro de Personajes
-        </div>
-        <div className="grid grid-cols-3 gap-3 pb-2">
-          <FilterSelect label="Importancia" value={filters.importance} options={CHAR_IMPORTANCE} onChange={v => setFilters({...filters, importance: v})} />
-          <FilterSelect label="Raza" value={filters.race} options={dynamicRaces} onChange={v => setFilters({...filters, race: v})} />
-          <FilterSelect label="Mundo" value={filters.world} options={dynamicWorlds} onChange={v => setFilters({...filters, world: v})} />
-          <FilterSelect label="CSM" value={filters.csm} options={CHAR_CSM} onChange={v => setFilters({...filters, csm: v})} />
-          <FilterSelect label="Noble" value={filters.noble} options={CHAR_NOBLE} onChange={v => setFilters({...filters, noble: v})} />
-        </div>
-      </div>
-
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="font-serif font-bold text-xl text-stone-800">Personajes ({filteredChars.length})</h3>
-        <PillarButton onClick={addChar} variant="gold" icon={Plus}>Añadir Personaje</PillarButton>
-      </div>
-
-      {/* GRID DE 3 COLUMNAS MINIMO PARA MOVIL */}
-      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-        {filteredChars.map(char => (
-          <CharacterCard 
-            key={char.id} 
-            char={char} 
-            onClick={() => { setExpandedCharId(char.id); setIsEditing(false); }} 
-          />
-        ))}
-        {filteredChars.length === 0 && (
-          <div className="col-span-full text-center py-12 text-stone-400 italic border-2 border-dashed border-stone-200 rounded-lg">
-            No se encontraron personajes con estos filtros.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, updateData, onCreateStory, onDemoLogin, isSaving }) => {
+const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, updateData, onCreateStory, onDemoLogin, isSaving, onDeleteStory }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [newArchetype, setNewArchetype] = useState("");
   
   // Estados para el Editor de Trama Fullscreen
   const [expandedPlotId, setExpandedPlotId] = useState(null);
+
+  // Estado para Modal de Borrado
+  const [deletingStory, setDeletingStory] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   // LOGIN LOGIC
   const handleLogin = async () => {
@@ -1508,7 +1044,43 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
 
   if (!activeStoryId) {
     return (
-      <div className="p-6 md:p-8 pb-32 animate-in fade-in">
+      <div className="p-6 md:p-8 pb-32 animate-in fade-in relative">
+        
+        {/* --- MODAL DE BORRADO --- */}
+        {deletingStory && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4 animate-in fade-in">
+                <div className="bg-white border border-stone-300 shadow-2xl max-w-md w-full p-8 relative">
+                    <button onClick={() => setDeletingStory(null)} className="absolute top-4 right-4 text-stone-400 hover:text-stone-600"><X size={20}/></button>
+                    <div className="flex flex-col items-center text-center mb-6">
+                        <div className="bg-red-50 p-3 rounded-full mb-4 text-red-500"><AlertTriangle size={32}/></div>
+                        <h3 className="font-serif font-bold text-xl text-stone-900">¿Eliminar Historia?</h3>
+                        <p className="text-sm text-stone-500 mt-2">Esta acción no se puede deshacer. Se perderán todos los personajes, tramas y configuraciones.</p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <p className="text-xs font-bold uppercase tracking-wider text-stone-400 text-center">Escribe el nombre exacto para confirmar:</p>
+                        <div className="bg-stone-100 p-2 text-center font-serif font-bold text-stone-800 select-all border border-stone-200">
+                            {deletingStory.title}
+                        </div>
+                        <input 
+                            autoFocus
+                            className="w-full p-3 border-2 border-stone-200 focus:border-red-400 outline-none text-center font-bold text-stone-800"
+                            placeholder="Escribe el título aquí..."
+                            value={deleteConfirmation}
+                            onChange={(e) => setDeleteConfirmation(e.target.value)}
+                        />
+                        <button 
+                            disabled={deleteConfirmation !== deletingStory.title}
+                            onClick={() => { onDeleteStory(deletingStory.id); setDeletingStory(null); setDeleteConfirmation(""); }}
+                            className="w-full py-3 bg-red-600 text-white font-bold uppercase tracking-widest hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
+                        >
+                            Confirmar Eliminación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
         <div className="flex justify-between items-center mb-8 border-b border-stone-200 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-stone-200 rounded-full flex items-center justify-center border border-stone-300"><User size={20}/></div>
@@ -1525,9 +1097,21 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
         ) : (
           <div className="grid gap-4">
             {stories.map(s => (
-              <MarbleCard key={s.id} onClick={() => setActiveStoryId(s.id)} className="cursor-pointer hover:border-amber-400">
-                <div className="p-6"><h3 className="font-serif text-xl font-bold text-stone-900">{s.title || "Sin Título"}</h3><div className="text-xs font-bold text-stone-400 mt-1 uppercase">{(s.plotArchetypes || []).join(", ") || "Sin Arquetipo"}</div></div>
-              </MarbleCard>
+              <div key={s.id} className="relative group">
+                  <MarbleCard onClick={() => setActiveStoryId(s.id)} className="cursor-pointer hover:border-amber-400">
+                    <div className="p-6 pr-12">
+                        <h3 className="font-serif text-xl font-bold text-stone-900">{s.title || "Sin Título"}</h3>
+                        <div className="text-xs font-bold text-stone-400 mt-1 uppercase">{(s.plotArchetypes || []).join(", ") || "Sin Arquetipo"}</div>
+                    </div>
+                  </MarbleCard>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setDeletingStory(s); setDeleteConfirmation(""); }}
+                    className="absolute top-4 right-4 p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 z-10"
+                    title="Eliminar Historia"
+                  >
+                      <Trash2 size={18} />
+                  </button>
+              </div>
             ))}
           </div>
         )}
@@ -1874,6 +1458,29 @@ export default function NarrativaOlympus() {
     }
   };
 
+  const handleDeleteStory = async (storyId) => {
+    if (isDemo) {
+        setStories(stories.filter(s => s.id !== storyId));
+        if (activeStoryId === storyId) {
+            setActiveStoryId(null);
+            setStoryData(null);
+        }
+        return;
+    }
+    if (!user || !db) return;
+    
+    try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'stories', storyId));
+        if (activeStoryId === storyId) {
+            setActiveStoryId(null);
+            setStoryData(null);
+        }
+    } catch (e) {
+        console.error("Error deleting story:", e);
+        alert("Error al eliminar la historia.");
+    }
+  };
+
   const navItems = [ { id: 'structure', label: 'Estructura', icon: Columns }, { id: 'world', label: 'Mundo', icon: Globe }, { id: 'characters', label: 'Personajes', icon: Users }, { id: 'story', label: 'Historia', icon: Scroll } ];
 
   return (
@@ -1885,7 +1492,7 @@ export default function NarrativaOlympus() {
           ? (activeTab === 'structure' ? <StructureView data={storyData} updateData={updateStoryData}/> : activeTab === 'world' ? <WorldView data={storyData} updateData={updateStoryData}/> : <CharactersView data={storyData} updateData={updateStoryData}/>)
           : <StoryHub 
               user={user} stories={stories} activeStoryId={activeStoryId} setActiveStoryId={setActiveStoryId} data={storyData} 
-              updateData={updateStoryData} onCreateStory={handleCreateStory} onDemoLogin={handleDemoLogin} isSaving={isSaving}
+              updateData={updateStoryData} onCreateStory={handleCreateStory} onDemoLogin={handleDemoLogin} isSaving={isSaving} onDeleteStory={handleDeleteStory}
             />
         }
       </main>
