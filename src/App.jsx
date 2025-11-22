@@ -86,7 +86,6 @@ const getImageSizeKB = (dataURL) => {
 const CHAR_IMPORTANCE = ["Principal", "Secundario", "Terciario"];
 const CHAR_CSM = ["Maestro", "Agente", "Lider", "No"];
 const CHAR_NOBLE = ["Si", "No"];
-// (Las razas y mundos ahora son dinámicos, pero mantenemos defaults por seguridad)
 const DEFAULT_RACES = ["Humano", "Elfo", "Enano"];
 const DEFAULT_WORLDS = ["Tierra"];
 
@@ -255,6 +254,7 @@ const SquareAvatar = ({ char, size = "md", onClick, editable }) => {
 // --- COMPONENTE EDITOR DE ENTIDAD (MUNDOS Y ESPECIES) ---
 const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpandedItemId, editingItem, setEditingItem }) => {
     if (!item) return null;
+    const fileInputRef = useRef(null);
 
     // Configuración de campos según el tipo (Mundo o Especie)
     const isWorld = listName === 'worlds';
@@ -273,6 +273,19 @@ const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpande
         { key: 'Description', label: 'Descripción' },
     ];
 
+    // Manejo de imagen para Especies/Mundos
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            const compressedBase64 = await compressImage(file);
+            updateItem(listName, item.id, 'imageUrl', compressedBase64);
+        } catch (error) {
+            console.error("Error al procesar imagen", error);
+            alert("Error al procesar la imagen.");
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-200 bg-white shadow-sm">
@@ -288,7 +301,25 @@ const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpande
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
-                <div className="mb-8 text-center">
+                <div className="mb-8 flex flex-col items-center">
+                    {/* AVATAR DE ESPECIE/MUNDO */}
+                    <div className="transform scale-125 mb-6 shadow-lg rounded-sm relative">
+                        <SquareAvatar 
+                            char={{ name: item.name, imageUrl: item.imageUrl }} 
+                            size="lg" 
+                            editable={editingItem}
+                            onClick={() => editingItem && fileInputRef.current.click()}
+                        />
+                        {item.imageUrl && (
+                           <div className="absolute -bottom-6 left-0 right-0 text-center">
+                             <span className="text-[8px] text-stone-400 flex items-center justify-center gap-1">
+                               <HardDrive size={8} /> {getImageSizeKB(item.imageUrl)} KB
+                             </span>
+                           </div>
+                        )}
+                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    </div>
+
                     {editingItem ? (
                          <input 
                          className="font-serif font-bold text-4xl text-center text-stone-900 bg-transparent border-b border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none w-full placeholder:text-stone-300 pb-1"
@@ -297,7 +328,7 @@ const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpande
                          placeholder="Nombre"
                        />
                     ) : (
-                        <h1 className="font-serif font-bold text-4xl text-stone-900">{item.name}</h1>
+                        <h1 className="font-serif font-bold text-4xl text-stone-900 text-center">{item.name}</h1>
                     )}
                 </div>
 
@@ -312,14 +343,15 @@ const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpande
                             {worldSpecies.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {worldSpecies.map((sp) => (
-                                        <span key={sp.id} className="px-3 py-1 rounded-full bg-stone-800 text-amber-50 text-xs font-bold border border-stone-800 shadow-sm">
+                                        <span key={sp.id} className="px-3 py-1 rounded-full bg-stone-800 text-amber-50 text-xs font-bold border border-stone-800 shadow-sm flex items-center gap-2">
+                                            {sp.imageUrl && <img src={sp.imageUrl} className="w-4 h-4 rounded-full object-cover" />}
                                             {sp.name}
                                         </span>
                                     ))}
                                 </div>
                             ) : (
                                 <p className="text-xs text-stone-400 italic">
-                                    Ninguna especie tiene este mundo como origen. (Configúralo en la ficha de Especie)
+                                    Ninguna especie tiene este mundo como origen.
                                 </p>
                             )}
                         </div>
@@ -356,7 +388,9 @@ const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpande
                                 <div className="flex flex-wrap gap-3">
                                     {worldCharacters.map(char => (
                                         <div key={char.id} className="flex items-center gap-2 bg-stone-50 p-2 rounded-md border border-stone-100">
-                                            <SquareAvatar char={char} size="sm" />
+                                            <div className="w-6 h-6 rounded-sm overflow-hidden bg-stone-200">
+                                                 {char.imageUrl ? <img src={char.imageUrl} className="w-full h-full object-cover" /> : <span className="flex items-center justify-center h-full w-full font-serif text-xs font-bold text-stone-500">{char.name.charAt(0)}</span>}
+                                            </div>
                                             <span className="text-xs font-bold text-stone-700">{char.name}</span>
                                         </div>
                                     ))}
@@ -517,10 +551,14 @@ const WorldView = ({ data, updateData }) => {
                     <span className="text-[9px] font-bold uppercase tracking-wider">Nuevo Mundo</span>
                 </div>
                 {worldsList.map(item => (
-                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('worlds'); setEditingItem(false); }} className="aspect-square rounded-lg bg-white border border-stone-200 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all">
-                            <Globe size={24} className="text-stone-300 mb-3 group-hover:text-amber-400 transition-colors"/>
-                            <h4 className="font-serif font-bold text-lg text-stone-800 leading-tight">{item.name}</h4>
-                            <div className="absolute bottom-2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">Ver Detalles</div>
+                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('worlds'); setEditingItem(false); }} className="aspect-square rounded-lg bg-white border border-stone-200 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all overflow-hidden">
+                            {item.imageUrl ? (
+                                <img src={item.imageUrl} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity" />
+                            ) : (
+                                <Globe size={24} className="text-stone-300 mb-3 group-hover:text-amber-400 transition-colors relative z-10"/>
+                            )}
+                            <h4 className="font-serif font-bold text-lg text-stone-800 leading-tight relative z-10">{item.name}</h4>
+                            <div className="absolute bottom-2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider relative z-10">Ver Detalles</div>
                         </div>
                 ))}
             </div>
@@ -536,10 +574,14 @@ const WorldView = ({ data, updateData }) => {
                     <span className="text-[9px] font-bold uppercase tracking-wider">Nueva Especie</span>
                 </div>
                 {speciesList.map(item => (
-                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('species'); setEditingItem(false); }} className="aspect-square rounded-lg bg-white border border-stone-200 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all">
-                            <Dna size={24} className="text-stone-300 mb-3 group-hover:text-amber-400 transition-colors"/>
-                            <h4 className="font-serif font-bold text-lg text-stone-800 leading-tight">{item.name}</h4>
-                            <div className="absolute bottom-2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">Ver Detalles</div>
+                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('species'); setEditingItem(false); }} className="aspect-square rounded-lg bg-white border border-stone-200 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all overflow-hidden">
+                             {item.imageUrl ? (
+                                <img src={item.imageUrl} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity" />
+                            ) : (
+                                <Dna size={24} className="text-stone-300 mb-3 group-hover:text-amber-400 transition-colors relative z-10"/>
+                            )}
+                            <h4 className="font-serif font-bold text-lg text-stone-800 leading-tight relative z-10">{item.name}</h4>
+                            <div className="absolute bottom-2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider relative z-10">Ver Detalles</div>
                         </div>
                 ))}
             </div>
@@ -746,6 +788,7 @@ const CharactersView = ({ data, updateData }) => {
                 </div>
 
                 <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm space-y-8">
+                    
                     {/* MODO EDICIÓN */}
                     {isEditing ? (
                         <>
