@@ -1,11 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import OlympusBackground from './components/ui/OlympusBackground';
-import MarbleCard from './components/ui/MarbleCard';
-import PillarButton from "./components/ui/PillarButton";
-import CharacterCard from "./components/ui/CharacterCard";
-import SquareAvatar from "./components/ui/SquareAvatar";
-import LoadingView from "./components/ui/LoadingView";
-import CloudStatus from "./components/ui/CloudStatus";
 import { initializeApp, getApps } from "firebase/app";
 import { 
   getAuth, 
@@ -145,6 +138,154 @@ const NEW_STORY_TEMPLATE = {
   worlds: [{id: 1, name: "Tierra"}], 
   subplots: [], 
   characters: [] 
+};
+
+// --- COMPONENTES VISUALES RECTOS ---
+
+const OlympusBackground = () => (
+  <div className="fixed inset-0 pointer-events-none z-0 bg-[#fdfbf7]">
+    <div className="absolute top-0 left-4 bottom-0 w-[1px] bg-stone-200/50"></div>
+    <div className="absolute top-0 right-4 bottom-0 w-[1px] bg-stone-200/50"></div>
+  </div>
+);
+
+const MarbleCard = ({ children, header, onMore, onClick, className="" }) => (
+  <div onClick={onClick} className={`relative bg-white border border-stone-300 shadow-sm mb-6 hover:shadow-md hover:border-amber-400 transition-all group ${onClick ? 'cursor-pointer' : ''} ${className}`}>
+    <div className="absolute top-0 left-0 right-0 h-[3px] bg-amber-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+    {(header || onMore) && (
+      <div className="flex justify-between items-center p-4 border-b border-stone-200 bg-stone-50">
+        <div className="font-serif font-bold text-stone-900 text-base uppercase tracking-widest truncate pr-4">{header}</div>
+        {onMore && <button onClick={(e) => { e.stopPropagation(); onMore(); }} className="text-stone-400 hover:text-amber-600"><MoreHorizontal size={18}/></button>}
+      </div>
+    )}
+    <div className="p-0">{children}</div>
+  </div>
+);
+
+const PillarButton = ({ onClick, children, variant="primary", icon: Icon, disabled, className="" }) => {
+  const variants = {
+    primary: `bg-stone-900 text-amber-50 border-stone-900 hover:bg-black hover:border-amber-500`,
+    gold: `bg-white text-amber-700 border-amber-500 hover:bg-amber-50`,
+    ghost: `bg-transparent text-stone-600 border-transparent hover:bg-stone-100 hover:text-stone-900`
+  };
+  return (
+    <button onClick={onClick} disabled={disabled} className={`px-5 py-2 font-serif text-[10px] font-bold uppercase tracking-[0.15em] flex items-center justify-center gap-2 border ${variants[variant] || variants.primary} ${className}`}>
+      {Icon && <Icon size={12} />} {children}
+    </button>
+  );
+};
+
+const LoadingView = ({ text = "Cargando..." }) => (
+  <div className="flex flex-col items-center justify-center h-64 text-stone-400 animate-in fade-in">
+    <Loader2 className="animate-spin mb-2" size={24} />
+    <span className="font-serif text-sm uppercase tracking-widest">{text}</span>
+  </div>
+);
+
+const CloudStatus = ({ isSaving }) => (
+  <div className="flex items-center gap-2 px-3 py-1 bg-white border border-stone-300 shadow-sm transition-all duration-300">
+    {isSaving ? (
+      <>
+        <Loader2 size={14} className="animate-spin text-amber-600" />
+        <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Guardando...</span>
+      </>
+    ) : (
+      <>
+        <Cloud size={14} className="text-green-600" />
+        <span className="text-[10px] font-bold text-stone-600 uppercase tracking-wider">En línea</span>
+      </>
+    )}
+  </div>
+);
+
+const CharacterCard = ({ char, onClick }) => {
+  if (!char) return null; // ULTRA SAFE GUARD
+
+  const getBgColor = (name) => {
+    const colors = ['bg-stone-200', 'bg-stone-300', 'bg-amber-100', 'bg-orange-100', 'bg-blue-100', 'bg-emerald-100'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  // SAFE GUARD: Ensure char values are strings
+  const safeName = String(char.name || "Sin Nombre");
+  const safeRace = String(char.race || "Desconocido");
+  const safeCsm = String(char.csm || "No");
+
+  return (
+    <div 
+      onClick={onClick}
+      className="relative aspect-square overflow-hidden border border-stone-300 hover:border-amber-500 transition-all duration-200 cursor-pointer group bg-white shadow-sm hover:shadow-lg"
+    >
+      <div className={`absolute inset-0 flex items-center justify-center ${!char.imageUrl ? getBgColor(safeName) : 'bg-stone-100'}`}>
+         {char.imageUrl ? (
+            <img src={char.imageUrl} alt={safeName} className="w-full h-full object-cover" />
+         ) : (
+            <span className="font-serif text-6xl md:text-8xl font-bold text-stone-400/50 select-none">
+                {safeName.substring(0, 1).toUpperCase()}
+            </span>
+         )}
+      </div>
+
+      <div className="absolute top-0 right-0 flex">
+        {char.noble === "Si" && (
+          <div className="p-1 bg-amber-500 text-white" title="Noble">
+            <Crown size={12} fill="currentColor" />
+          </div>
+        )}
+        {safeCsm !== "No" && (
+          <div className="p-1 bg-stone-900 text-white" title={`CSM: ${safeCsm}`}>
+            <Shield size={12} />
+          </div>
+        )}
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 p-3 pt-8 bg-gradient-to-t from-stone-900 via-stone-900/80 to-transparent text-white">
+        <h4 className="font-serif font-bold text-sm md:text-base leading-tight truncate drop-shadow-sm mb-0.5">
+          {safeName}
+        </h4>
+        <div className="flex justify-between items-end">
+           <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-stone-300 truncate pr-1">
+             {safeRace}
+           </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SquareAvatar = ({ char, size = "md", onClick, editable }) => {
+  const sizeClasses = { 
+    sm: "w-8 h-8 text-xs", 
+    md: "w-16 h-16 text-xl", 
+    lg: "w-32 h-32 text-4xl",
+    xl: "w-48 h-48 text-6xl" 
+  };
+  
+  // SAFE GUARD
+  const safeName = char?.name ? String(char.name) : "?";
+
+  return (
+    <div 
+      onClick={editable ? onClick : undefined}
+      className={`${sizeClasses[size] || sizeClasses.md} bg-stone-100 border border-stone-300 flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden group ${editable ? 'cursor-pointer hover:border-amber-400' : ''}`}
+    >
+      {char?.imageUrl ? (
+        <img src={char.imageUrl} alt="Avatar" className="w-full h-full object-cover" />
+      ) : (
+        <span className="font-serif font-bold text-stone-400 select-none">
+            {safeName.substring(0, 2).toUpperCase()}
+        </span>
+      )}
+      
+      {editable && (
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Camera size={24} className="text-white" />
+        </div>
+      )}
+    </div>
+  );
 };
 
 // --- COMPONENTE EDITOR DE ENTIDAD (MUNDOS Y ESPECIES) ---
