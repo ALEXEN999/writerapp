@@ -20,7 +20,7 @@ import {
   orderBy 
 } from "firebase/firestore";
 import { 
-  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2, Edit2, X, StickyNote, LayoutGrid, Maximize2, Check, Filter, Crown, Shield, Sparkles, Upload, Camera, HardDrive, Shirt, Eye, Brain, History, Swords, Dna, Mountain
+  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2, Edit2, X, StickyNote, LayoutGrid, Maximize2, Check, Filter, Crown, Shield, Sparkles, Upload, Camera, HardDrive, Shirt, Eye, Brain, History, Swords, Dna, FlaskConical, Users2
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN FIREBASE ---
@@ -64,8 +64,10 @@ const compressImage = (file) => {
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
+        
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
         const dataUrl = canvas.toDataURL('image/jpeg', 0.6); 
         resolve(dataUrl);
       }
@@ -80,10 +82,13 @@ const getImageSizeKB = (dataURL) => {
   return (bytes / 1024).toFixed(1);
 };
 
-// --- LISTAS ESTÁTICAS (Solo las que no son dinámicas) ---
+// --- Listas de Opciones por Defecto ---
 const CHAR_IMPORTANCE = ["Principal", "Secundario", "Terciario"];
 const CHAR_CSM = ["Maestro", "Agente", "Lider", "No"];
 const CHAR_NOBLE = ["Si", "No"];
+// (Las razas y mundos ahora son dinámicos, pero mantenemos defaults por seguridad)
+const DEFAULT_RACES = ["Humano", "Elfo", "Enano"];
+const DEFAULT_WORLDS = ["Tierra"];
 
 // --- Plantillas ---
 const STRUCTURE_TEMPLATES = {
@@ -101,7 +106,6 @@ const NEW_STORY_TEMPLATE = {
   structurePoints: [], 
   diegesis: "", 
   lore: [], 
-  // Ahora son arrays de objetos, no strings
   species: [{id: 1, name: "Humano"}], 
   worlds: [{id: 1, name: "Tierra"}],
   subplots: [], 
@@ -174,22 +178,44 @@ const CharacterCard = ({ char, onClick }) => {
   };
 
   return (
-    <div onClick={onClick} className="relative aspect-square rounded-lg overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group bg-white border border-stone-200">
+    <div 
+      onClick={onClick}
+      className="relative aspect-square rounded-lg overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group bg-white border border-stone-200"
+    >
       <div className={`absolute inset-0 ${!char.imageUrl ? getBgColor(char.name || "") : 'bg-stone-100'} flex items-center justify-center`}>
          {char.imageUrl ? (
             <img src={char.imageUrl} alt={char.name} className="w-full h-full object-cover" />
          ) : (
-            <span className="font-serif text-6xl md:text-8xl font-bold text-stone-400/50 select-none">{char.name ? char.name.substring(0, 1).toUpperCase() : "?"}</span>
+            <span className="font-serif text-6xl md:text-8xl font-bold text-stone-400/50 select-none">
+                {char.name ? char.name.substring(0, 1).toUpperCase() : "?"}
+            </span>
          )}
       </div>
+
       <div className="absolute top-1 right-1 flex gap-1">
-        {char.noble === "Si" && <div className="p-1 bg-amber-400 text-white rounded-full shadow-sm"><Crown size={10} fill="currentColor" /></div>}
-        {char.csm && char.csm !== "No" && <div className="p-1 bg-stone-800 text-white rounded-full shadow-sm"><Shield size={10} /></div>}
+        {char.noble === "Si" && (
+          <div className="p-1 bg-amber-400 text-white rounded-full shadow-sm" title="Noble">
+            <Crown size={10} fill="currentColor" />
+          </div>
+        )}
+        {char.csm && char.csm !== "No" && (
+          <div className="p-1 bg-stone-800 text-white rounded-full shadow-sm" title={`CSM: ${char.csm}`}>
+            <Shield size={10} />
+          </div>
+        )}
       </div>
+
       <div className="absolute bottom-0 left-0 right-0 p-2 pb-3 pt-8 bg-gradient-to-t from-stone-900/95 via-stone-900/70 to-transparent text-white">
-        <h4 className="font-serif font-bold text-sm md:text-lg leading-tight truncate drop-shadow-md mb-0.5">{char.name || "Sin Nombre"}</h4>
+        <h4 className="font-serif font-bold text-sm md:text-lg leading-tight truncate drop-shadow-md mb-0.5">
+          {char.name || "Sin Nombre"}
+        </h4>
         <div className="flex justify-between items-end">
-           <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-stone-300 truncate pr-1">{char.race || "Desconocido"}</span>
+           <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-stone-300 truncate pr-1">
+             {char.race || "Desconocido"}
+           </span>
+           <div className="opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
+             <Maximize2 size={14} className="text-white" />
+           </div>
         </div>
       </div>
     </div>
@@ -206,16 +232,214 @@ const SquareAvatar = ({ char, size = "md", onClick, editable }) => {
       {char.imageUrl ? (
         <img src={char.imageUrl} alt="Avatar" className="w-full h-full object-cover" />
       ) : (
-        <span className="font-serif font-bold text-stone-600">{char?.name ? char.name.substring(0, 2).toUpperCase() : "?"}</span>
+        <span className="font-serif font-bold text-stone-600">
+            {char?.name ? char.name.substring(0, 2).toUpperCase() : "?"}
+        </span>
       )}
+      
       {editable && (
         <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <Camera size={24} className="text-white" />
         </div>
       )}
+
+      {!editable && char.noble === "Si" && (
+        <div className="absolute top-0 right-0 p-0.5 bg-amber-400 text-white rounded-bl-md shadow-sm z-10">
+          <Crown size={10} fill="currentColor" />
+        </div>
+      )}
     </div>
   );
 };
+
+// --- COMPONENTE EDITOR DE ENTIDAD (MUNDOS Y ESPECIES) ---
+const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpandedItemId, editingItem, setEditingItem }) => {
+    if (!item) return null;
+
+    // Configuración de campos según el tipo (Mundo o Especie)
+    const isWorld = listName === 'worlds';
+    const isSpecies = listName === 'species';
+
+    // Filtrar personajes que pertenecen a este mundo
+    const worldCharacters = isWorld ? (data.characters || []).filter(c => c.world === item.name) : [];
+    
+    // Filtrar especies que pertenecen a este mundo (Origen)
+    const worldSpecies = isWorld ? (data.species || []).filter(s => s.worldOrigin === item.name) : [];
+
+    const sections = [
+        { key: 'Appearance', label: 'Aspecto' },
+        { key: 'World', label: 'Mundo Origen', isSelector: true }, 
+        { key: 'Power', label: 'Poderes / Magia' },
+        { key: 'Description', label: 'Descripción' },
+    ];
+
+    return (
+        <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-200 bg-white shadow-sm">
+                <button onClick={() => { setExpandedItemId(null); setEditingItem(false); }} className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
+                    <ArrowLeft size={18}/> Volver
+                </button>
+                <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">
+                    {isSpecies ? 'Especie' : 'Mundo'}
+                </h2>
+                <button onClick={() => setEditingItem(!editingItem)} className="text-amber-600 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-3 py-1 rounded-full">
+                    {editingItem ? <Check size={16}/> : <Edit2 size={14}/>} {editingItem ? 'Listo' : 'Editar'}
+                </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
+                <div className="mb-8 text-center">
+                    {editingItem ? (
+                         <input 
+                         className="font-serif font-bold text-4xl text-center text-stone-900 bg-transparent border-b border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none w-full placeholder:text-stone-300 pb-1"
+                         value={item.name} 
+                         onChange={(e) => updateItem(listName, item.id, 'name', e.target.value)}
+                         placeholder="Nombre"
+                       />
+                    ) : (
+                        <h1 className="font-serif font-bold text-4xl text-stone-900">{item.name}</h1>
+                    )}
+                </div>
+
+                <div className="space-y-6">
+                    
+                    {/* 1. SECCIÓN DE RAZAS (Solo para Mundos - DERIVADO AUTOMÁTICO) */}
+                    {isWorld && (
+                        <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
+                            <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-3 flex items-center gap-2">
+                                <Dna size={12}/> Razas Autóctonas
+                            </h4>
+                            {worldSpecies.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {worldSpecies.map((sp) => (
+                                        <span key={sp.id} className="px-3 py-1 rounded-full bg-stone-800 text-amber-50 text-xs font-bold border border-stone-800 shadow-sm">
+                                            {sp.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-stone-400 italic">
+                                    Ninguna especie tiene este mundo como origen. (Configúralo en la ficha de Especie)
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* 2. SECCIÓN DE DIÉGESIS (Solo para Mundos) */}
+                    {isWorld && (
+                        <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
+                            <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2">
+                                <FlaskConical size={12}/> Diégesis Local
+                            </h4>
+                            {editingItem ? (
+                                <textarea 
+                                    className="w-full p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 text-sm"
+                                    value={item.diegesis || ""}
+                                    onChange={(e) => updateItem(listName, item.id, 'diegesis', e.target.value)}
+                                    placeholder="Leyes físicas, magia específica de este mundo..."
+                                />
+                            ) : (
+                                <p className="font-serif text-stone-700 text-sm whitespace-pre-wrap leading-relaxed">
+                                    {item.diegesis || "Sin información específica."}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* 3. SECCIÓN DE PERSONAJES (Solo para Mundos, Read-Only derivado) */}
+                    {isWorld && (
+                        <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
+                            <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-3 flex items-center gap-2">
+                                <Users2 size={12}/> Habitantes Conocidos
+                            </h4>
+                            {worldCharacters.length > 0 ? (
+                                <div className="flex flex-wrap gap-3">
+                                    {worldCharacters.map(char => (
+                                        <div key={char.id} className="flex items-center gap-2 bg-stone-50 p-2 rounded-md border border-stone-100">
+                                            <SquareAvatar char={char} size="sm" />
+                                            <span className="text-xs font-bold text-stone-700">{char.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-stone-400 italic">Ningún personaje asignado a este mundo.</p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* 4. SECCIÓN DESCRIPCIÓN (Común) */}
+                    <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
+                        <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2">
+                            <StickyNote size={12}/> Descripción General
+                        </h4>
+                        {editingItem ? (
+                            <textarea 
+                                className="w-full p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[120px] font-serif text-stone-700 text-sm"
+                                value={item.description || ""}
+                                onChange={(e) => updateItem(listName, item.id, 'description', e.target.value)}
+                                placeholder="Descripción general..."
+                            />
+                        ) : (
+                            <p className="font-serif text-stone-700 text-sm whitespace-pre-wrap leading-relaxed">
+                                {item.description || "Sin descripción."}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* SECCIONES ESPECÍFICAS DE ESPECIES (Aspecto, Poderes) */}
+                    {isSpecies && (
+                        <>
+                             <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
+                                <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2"><Eye size={12}/> Aspecto</h4>
+                                {editingItem ? (
+                                    <textarea className="w-full p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[80px] font-serif text-stone-700 text-sm" value={item.appearance || ""} onChange={(e) => updateItem(listName, item.id, 'appearance', e.target.value)} placeholder="Características físicas..." />
+                                ) : (<p className="font-serif text-stone-700 text-sm">{item.appearance || "Sin definir."}</p>)}
+                             </div>
+                             
+                             <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
+                                <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2"><Zap size={12}/> Poderes</h4>
+                                {editingItem ? (
+                                    <textarea className="w-full p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[80px] font-serif text-stone-700 text-sm" value={item.powers || ""} onChange={(e) => updateItem(listName, item.id, 'powers', e.target.value)} placeholder="Habilidades mágicas o naturales..." />
+                                ) : (<p className="font-serif text-stone-700 text-sm">{item.powers || "Sin definir."}</p>)}
+                             </div>
+
+                             <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
+                                <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2"><Globe size={12}/> Mundo de Origen</h4>
+                                {editingItem ? (
+                                    <select className="w-full p-2 bg-stone-50 rounded border border-stone-200 text-sm font-serif" value={item.worldOrigin || ""} onChange={(e) => updateItem(listName, item.id, 'worldOrigin', e.target.value)}>
+                                        <option value="">Selecciona un Mundo...</option>
+                                        {(data.worlds || []).map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
+                                    </select>
+                                ) : (<p className="font-serif text-stone-700 text-sm">{item.worldOrigin || "Desconocido"}</p>)}
+                             </div>
+                        </>
+                    )}
+
+                    {editingItem && (
+                         <button onClick={() => deleteItem(listName, item.id)} className="w-full py-3 text-red-500 border border-red-200 hover:bg-red-50 rounded uppercase text-xs font-bold flex items-center justify-center gap-2 mt-8">
+                            <Trash2 size={16}/> Eliminar
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+  };
+
+// --- COMPONENTE SELECTOR DE FILTRO EXTRAÍDO ---
+const FilterSelect = ({ label, value, options, onChange }) => (
+    <div className="flex flex-col w-full">
+      <label className="text-[8px] font-bold text-stone-400 uppercase mb-1 ml-1 tracking-widest">{label}</label>
+      <select 
+        className="bg-white border border-stone-200 text-stone-700 text-[10px] font-bold rounded-md p-1.5 focus:outline-none focus:border-amber-400 cursor-pointer w-full"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value={label.endsWith('s') ? "Todos" : "Todas"}>Todas</option>
+        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+      </select>
+    </div>
+  );
 
 // --- Módulos ---
 const StructureView = ({ data, updateData }) => {
@@ -247,19 +471,19 @@ const StructureView = ({ data, updateData }) => {
   );
 };
 
-// --- WORLD VIEW MEJORADA ---
 const WorldView = ({ data, updateData }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [expandedItemId, setExpandedItemId] = useState(null);
   const [editingItem, setEditingItem] = useState(false);
+  const [activeListType, setActiveListType] = useState(null);
 
   if (!data) return <LoadingView />;
 
-  // Helpers para gestionar listas (Species/Worlds)
   const addItem = (listName) => {
     const newItem = { id: Date.now(), name: `Nuevo ${listName === 'species' ? 'Especie' : 'Mundo'}` };
     updateData({ ...data, [listName]: [...(data[listName] || []), newItem] });
     setExpandedItemId(newItem.id);
+    setActiveListType(listName);
     setEditingItem(true);
   };
 
@@ -277,158 +501,67 @@ const WorldView = ({ data, updateData }) => {
       }
   };
 
-  // Sub-componente: Editor Genérico para Especies y Mundos
-  const EntityEditor = ({ listName, item }) => {
-    if (!item) return null;
-    const sections = [
-        { key: 'Appearance', label: 'Aspecto' },
-        { key: 'World', label: 'Mundo Origen', isSelector: true }, // Solo para Especies
-        { key: 'Power', label: 'Poderes / Magia' },
-        { key: 'Description', label: 'Descripción' },
-    ];
-
-    return (
-        <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-200 bg-white shadow-sm">
-                <button onClick={() => { setExpandedItemId(null); setEditingItem(false); }} className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
-                    <ArrowLeft size={18}/> Volver
-                </button>
-                <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">
-                    {listName === 'species' ? 'Especie' : 'Mundo'}
-                </h2>
-                <button onClick={() => setEditingItem(!editingItem)} className="text-amber-600 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-3 py-1 rounded-full">
-                    {editingItem ? <Check size={16}/> : <Edit2 size={14}/>} {editingItem ? 'Listo' : 'Editar'}
-                </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
-                <div className="mb-8 text-center">
-                    {editingItem ? (
-                         <input 
-                         className="font-serif font-bold text-4xl text-center text-stone-900 bg-transparent border-b border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none w-full placeholder:text-stone-300 pb-1"
-                         value={item.name} 
-                         onChange={(e) => updateItem(listName, item.id, 'name', e.target.value)}
-                         placeholder="Nombre"
-                       />
-                    ) : (
-                        <h1 className="font-serif font-bold text-4xl text-stone-900">{item.name}</h1>
-                    )}
-                </div>
-
-                <div className="space-y-6">
-                    {/* Toggles para secciones */}
-                    {editingItem && (
-                        <div className="flex flex-wrap gap-2 mb-4 justify-center">
-                             {sections.map(sec => {
-                                if (listName === 'worlds' && sec.key === 'World') return null; // Mundos no tienen "Mundo Origen"
-                                return (
-                                    <button
-                                        key={sec.key}
-                                        onClick={() => updateItem(listName, item.id, `show${sec.key}`, !item[`show${sec.key}`])}
-                                        className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border transition-all ${item[`show${sec.key}`] ? 'bg-stone-800 text-white' : 'bg-white text-stone-400'}`}
-                                    >
-                                        {sec.label}
-                                    </button>
-                                )
-                             })}
-                        </div>
-                    )}
-
-                    {/* Campos Dinámicos */}
-                    {sections.map(sec => {
-                        if (listName === 'worlds' && sec.key === 'World') return null;
-                        if (!item[`show${sec.key}`] && !editingItem) return null; // Ocultar si no está activo y no editamos
-
-                        return (item[`show${sec.key}`] || editingItem) ? (
-                            <div key={sec.key} className={`bg-white p-4 border border-stone-200 rounded-lg ${!item[`show${sec.key}`] ? 'opacity-50' : ''}`}>
-                                <label className="text-[10px] font-bold text-amber-700 uppercase mb-2 block">{sec.label}</label>
-                                {editingItem ? (
-                                    sec.isSelector && listName === 'species' ? (
-                                        <select 
-                                            className="w-full p-2 bg-stone-50 rounded border border-stone-200 text-sm font-serif"
-                                            value={item.worldOrigin || ""}
-                                            onChange={(e) => updateItem(listName, item.id, 'worldOrigin', e.target.value)}
-                                        >
-                                            <option value="">Selecciona un Mundo...</option>
-                                            {(data.worlds || []).map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
-                                        </select>
-                                    ) : (
-                                        <textarea 
-                                            className="w-full p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[80px] font-serif text-stone-700 text-sm"
-                                            value={item[`text${sec.key}`] || ""}
-                                            onChange={(e) => updateItem(listName, item.id, `text${sec.key}`, e.target.value)}
-                                            placeholder={`Escribe sobre ${sec.label}...`}
-                                        />
-                                    )
-                                ) : (
-                                    <p className="font-serif text-stone-700 text-sm whitespace-pre-wrap">
-                                        {sec.isSelector ? (item.worldOrigin || "No especificado") : (item[`text${sec.key}`] || "Sin detalles.")}
-                                    </p>
-                                )}
-                            </div>
-                        ) : null;
-                    })}
-                    
-                    {editingItem && (
-                         <button onClick={() => deleteItem(listName, item.id)} className="w-full py-3 text-red-500 border border-red-200 hover:bg-red-50 rounded uppercase text-xs font-bold flex items-center justify-center gap-2 mt-8">
-                            <Trash2 size={16}/> Eliminar
-                        </button>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-  };
-
-  const activeList = activeTab === 'species' ? (data.species || []) : activeTab === 'worlds' ? (data.worlds || []) : [];
-  const expandedItem = expandedItemId ? activeList.find(i => i.id === expandedItemId) : null;
+  const speciesList = data.species || [];
+  const worldsList = data.worlds || [];
+  const expandedItem = expandedItemId ? (activeListType === 'species' ? speciesList : worldsList).find(i => i.id === expandedItemId) : null;
 
   return (
-    <div className="p-4 md:p-6 pb-32 space-y-6 animate-in fade-in">
-        {/* Sub-Navigation */}
-        <div className="flex justify-center gap-4 mb-6 border-b border-stone-200 pb-4">
-            <button onClick={() => setActiveTab('general')} className={`text-xs font-bold uppercase tracking-widest px-2 py-1 ${activeTab === 'general' ? 'text-amber-600 border-b-2 border-amber-600' : 'text-stone-400'}`}>General</button>
-            <button onClick={() => setActiveTab('species')} className={`text-xs font-bold uppercase tracking-widest px-2 py-1 ${activeTab === 'species' ? 'text-amber-600 border-b-2 border-amber-600' : 'text-stone-400'}`}>Especies</button>
-            <button onClick={() => setActiveTab('worlds')} className={`text-xs font-bold uppercase tracking-widest px-2 py-1 ${activeTab === 'worlds' ? 'text-amber-600 border-b-2 border-amber-600' : 'text-stone-400'}`}>Mundos</button>
-        </div>
-
-        {activeTab === 'general' && (
-            <MarbleCard header="Leyes de la Realidad">
-                <textarea className="w-full p-4 min-h-[300px] bg-transparent focus:outline-none font-serif text-lg leading-relaxed resize-none text-stone-800 placeholder:text-stone-300" placeholder="Escribe aquí la cosmogonía, física y magia..." value={data.diegesis || ""} onChange={(e) => updateData({...data, diegesis: e.target.value})} />
-            </MarbleCard>
-        )}
-
-        {(activeTab === 'species' || activeTab === 'worlds') && (
-            <>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {/* Botón Crear Nuevo */}
-                    <div 
-                        onClick={() => addItem(activeTab)}
-                        className="aspect-square rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:text-amber-600 hover:border-amber-400 cursor-pointer transition-all group"
-                    >
-                        <Plus size={32} className="mb-2 group-hover:scale-110 transition-transform"/>
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Crear {activeTab === 'species' ? 'Especie' : 'Mundo'}</span>
-                    </div>
-
-                    {/* Lista de Items */}
-                    {activeList.map(item => (
-                         <div 
-                            key={item.id} 
-                            onClick={() => { setExpandedItemId(item.id); setEditingItem(false); }}
-                            className="aspect-square rounded-lg bg-white border border-stone-200 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all"
-                         >
-                             {activeTab === 'species' ? <Dna size={24} className="text-stone-300 mb-3"/> : <Globe size={24} className="text-stone-300 mb-3"/>}
-                             <h4 className="font-serif font-bold text-lg text-stone-800 leading-tight">{item.name}</h4>
-                             <div className="absolute bottom-2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">Ver Detalles</div>
-                         </div>
-                    ))}
+    <div className="p-4 md:p-6 pb-32 space-y-10 animate-in fade-in">
+        <section>
+            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 border-b border-stone-200 pb-2 flex items-center gap-2">
+               <Globe size={14} /> Mundos
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div onClick={() => addItem('worlds')} className="aspect-square rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:text-amber-600 hover:border-amber-400 cursor-pointer transition-all group bg-stone-50/50">
+                    <Plus size={24} className="mb-2 group-hover:scale-110 transition-transform"/>
+                    <span className="text-[9px] font-bold uppercase tracking-wider">Nuevo Mundo</span>
                 </div>
-            </>
-        )}
+                {worldsList.map(item => (
+                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('worlds'); setEditingItem(false); }} className="aspect-square rounded-lg bg-white border border-stone-200 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all">
+                            <Globe size={24} className="text-stone-300 mb-3 group-hover:text-amber-400 transition-colors"/>
+                            <h4 className="font-serif font-bold text-lg text-stone-800 leading-tight">{item.name}</h4>
+                            <div className="absolute bottom-2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">Ver Detalles</div>
+                        </div>
+                ))}
+            </div>
+        </section>
 
-        {/* Editor Fullscreen Overlay */}
-        {(activeTab === 'species' || activeTab === 'worlds') && expandedItemId && (
-            <EntityEditor listName={activeTab} item={expandedItem} />
+        <section>
+            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 border-b border-stone-200 pb-2 flex items-center gap-2">
+               <Dna size={14} /> Especies
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div onClick={() => addItem('species')} className="aspect-square rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:text-amber-600 hover:border-amber-400 cursor-pointer transition-all group bg-stone-50/50">
+                    <Plus size={24} className="mb-2 group-hover:scale-110 transition-transform"/>
+                    <span className="text-[9px] font-bold uppercase tracking-wider">Nueva Especie</span>
+                </div>
+                {speciesList.map(item => (
+                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('species'); setEditingItem(false); }} className="aspect-square rounded-lg bg-white border border-stone-200 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all">
+                            <Dna size={24} className="text-stone-300 mb-3 group-hover:text-amber-400 transition-colors"/>
+                            <h4 className="font-serif font-bold text-lg text-stone-800 leading-tight">{item.name}</h4>
+                            <div className="absolute bottom-2 text-[9px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">Ver Detalles</div>
+                        </div>
+                ))}
+            </div>
+        </section>
+
+        <section>
+             <MarbleCard header="Leyes de la Realidad">
+                <textarea className="w-full p-4 min-h-[300px] bg-transparent focus:outline-none font-serif text-lg leading-relaxed resize-none text-stone-800 placeholder:text-stone-300" placeholder="Escribe aquí la cosmogonía, física y magia de tu universo..." value={data.diegesis || ""} onChange={(e) => updateData({...data, diegesis: e.target.value})} />
+            </MarbleCard>
+        </section>
+
+        {expandedItemId && activeListType && (
+            <EntityEditor 
+                listName={activeListType} 
+                item={expandedItem} 
+                data={data}
+                updateItem={updateItem}
+                deleteItem={deleteItem}
+                setExpandedItemId={setExpandedItemId}
+                editingItem={editingItem}
+                setEditingItem={setEditingItem}
+            />
         )}
     </div>
   );
@@ -436,10 +569,7 @@ const WorldView = ({ data, updateData }) => {
 
 // --- NUEVA VISTA DE PERSONAJES (FILTROS DINÁMICOS Y GRID LIMPIO) ---
 const CharactersView = ({ data, updateData }) => {
-    // Calcular listas dinámicas para los filtros
-    // Si son strings (formato antiguo) las usamos tal cual, si son objetos (nuevo), sacamos el nombre
     const getNames = (list) => (list || []).map(i => typeof i === 'string' ? i : i.name);
-    
     const dynamicRaces = getNames(data.species).length > 0 ? getNames(data.species) : CHAR_RACES;
     const dynamicWorlds = getNames(data.worlds).length > 0 ? getNames(data.worlds) : CHAR_WORLDS;
 
@@ -616,7 +746,6 @@ const CharactersView = ({ data, updateData }) => {
                 </div>
 
                 <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm space-y-8">
-                    
                     {/* MODO EDICIÓN */}
                     {isEditing ? (
                         <>
@@ -759,14 +888,13 @@ const CharactersView = ({ data, updateData }) => {
   return (
     <div className="p-4 md:p-8 pb-40 animate-in fade-in">
       
-      {/* BARRA DE FILTROS */}
+      {/* BARRA DE FILTROS COMPACTOS - GRID 3 COLUMNAS */}
       <div className="mb-8 bg-stone-50 border border-stone-200 p-4 rounded-lg shadow-inner">
         <div className="flex items-center gap-2 mb-3 text-amber-700 font-bold text-xs uppercase tracking-wider">
           <Filter size={14} /> Filtro de Personajes
         </div>
         <div className="grid grid-cols-3 gap-3 pb-2">
           <FilterSelect label="Importancia" value={filters.importance} options={CHAR_IMPORTANCE} onChange={v => setFilters({...filters, importance: v})} />
-          {/* Usamos las listas dinámicas para los filtros */}
           <FilterSelect label="Raza" value={filters.race} options={dynamicRaces} onChange={v => setFilters({...filters, race: v})} />
           <FilterSelect label="Mundo" value={filters.world} options={dynamicWorlds} onChange={v => setFilters({...filters, world: v})} />
           <FilterSelect label="CSM" value={filters.csm} options={CHAR_CSM} onChange={v => setFilters({...filters, csm: v})} />
@@ -779,7 +907,7 @@ const CharactersView = ({ data, updateData }) => {
         <PillarButton onClick={addChar} variant="gold" icon={Plus}>Añadir Personaje</PillarButton>
       </div>
 
-      {/* GRID DE PERSONAJES */}
+      {/* GRID DE 3 COLUMNAS MINIMO PARA MOVIL */}
       <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
         {filteredChars.map(char => (
           <CharacterCard 
