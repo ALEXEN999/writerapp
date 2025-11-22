@@ -20,7 +20,7 @@ import {
   orderBy 
 } from "firebase/firestore";
 import { 
-  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2, Edit2, X, StickyNote, LayoutGrid, Maximize2, Check, Filter, Crown, Shield, Sparkles, Upload, Camera, HardDrive
+  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2, Edit2, X, StickyNote, LayoutGrid, Maximize2, Check, Filter, Crown, Shield, Sparkles, Upload, Camera, HardDrive, Shirt, Eye, Brain, History, Swords
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN FIREBASE ---
@@ -75,12 +75,9 @@ const compressImage = (file) => {
   })
 };
 
-// Calcula el peso en KB de una cadena Base64
 const getImageSizeKB = (dataURL) => {
   if (!dataURL) return 0;
-  // Eliminar cabecera "data:image/..." si existe para contar solo los datos
   const base64String = dataURL.split(',')[1] || dataURL;
-  // Fórmula: (caracteres * 3) / 4 = bytes aproximados
   const bytes = (base64String.length * 3) / 4;
   return (bytes / 1024).toFixed(1);
 };
@@ -225,7 +222,6 @@ const CharacterCard = ({ char, onClick }) => {
 
 const SquareAvatar = ({ char, size = "md", onClick, editable }) => {
   const sizes = { sm: "w-10 h-10 text-xs", md: "w-16 h-16 text-xl", lg: "w-24 h-24 text-3xl" };
-  
   return (
     <div 
       onClick={editable ? onClick : undefined}
@@ -316,7 +312,7 @@ const CharactersView = ({ data, updateData }) => {
   
   const [expandedCharId, setExpandedCharId] = useState(null);
   const [isEditing, setIsEditing] = useState(false); 
-  const fileInputRef = useRef(null); // Ref para el input oculto
+  const fileInputRef = useRef(null); 
 
   if (!data) return <LoadingView />;
 
@@ -329,9 +325,20 @@ const CharactersView = ({ data, updateData }) => {
       world: "Tierra", 
       csm: "No", 
       noble: "No",
-      charPlot: "",
-      charSubplot: "",
-      imageUrl: "" // Campo para la imagen
+      // Secciones dinámicas
+      showPersonality: false,
+      personalityText: "",
+      showAppearance: false,
+      appearanceText: "",
+      showClothing: false,
+      clothingText: "",
+      showPowers: false,
+      powersText: "",
+      showHistory: false,
+      historyText: "",
+      
+      characterPlots: [], // Array para tramas personales
+      imageUrl: ""
     };
     updateData({ ...data, characters: [newChar, ...data.characters] });
     setExpandedCharId(newChar.id);
@@ -342,6 +349,27 @@ const CharactersView = ({ data, updateData }) => {
     updateData({ ...data, characters: data.characters.map(c => c.id === id ? { ...c, [field]: val } : c) });
   };
 
+  const addCharacterPlot = (charId) => {
+    const char = data.characters.find(c => c.id === charId);
+    if(!char) return;
+    const newPlot = { id: Date.now(), text: "" };
+    updateChar(charId, 'characterPlots', [...(char.characterPlots || []), newPlot]);
+  };
+
+  const updateCharacterPlot = (charId, plotId, text) => {
+     const char = data.characters.find(c => c.id === charId);
+     if(!char) return;
+     const newPlots = (char.characterPlots || []).map(p => p.id === plotId ? { ...p, text } : p);
+     updateChar(charId, 'characterPlots', newPlots);
+  };
+
+  const deleteCharacterPlot = (charId, plotId) => {
+     const char = data.characters.find(c => c.id === charId);
+     if(!char) return;
+     const newPlots = (char.characterPlots || []).filter(p => p.id !== plotId);
+     updateChar(charId, 'characterPlots', newPlots);
+  };
+
   const deleteChar = (id) => { 
     if(confirm("¿Eliminar personaje?")) {
         updateData({ ...data, characters: data.characters.filter(c => c.id !== id) }); 
@@ -349,16 +377,14 @@ const CharactersView = ({ data, updateData }) => {
     }
   };
 
-  // Función para manejar la subida de imagen
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
     try {
         const compressedBase64 = await compressImage(file);
         updateChar(expandedCharId, 'imageUrl', compressedBase64);
     } catch (error) {
-        console.error("Error al procesar imagen", error);
+        console.error(error);
         alert("Error al procesar la imagen.");
     }
   };
@@ -399,6 +425,15 @@ const CharactersView = ({ data, updateData }) => {
   const expandedChar = (data.characters || []).find(c => c.id === expandedCharId);
 
   if (expandedCharId && expandedChar) {
+      // Definición de secciones modulares
+      const sections = [
+        { key: 'Personality', label: '1. Personalidad', icon: Brain },
+        { key: 'Appearance', label: '2. Aspecto', icon: Eye },
+        { key: 'Clothing', label: '3. Vestimenta', icon: Shirt },
+        { key: 'Powers', label: '4. Poderes', icon: Zap },
+        { key: 'History', label: '5. Historia', icon: History },
+      ];
+
       return (
         <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
              {/* Header */}
@@ -428,7 +463,6 @@ const CharactersView = ({ data, updateData }) => {
                             editable={isEditing}
                             onClick={() => isEditing && fileInputRef.current.click()}
                         />
-                        {/* Indicador de peso de la imagen */}
                         {expandedChar.imageUrl && (
                            <div className="absolute -bottom-6 left-0 right-0 text-center">
                              <span className="text-[8px] text-stone-400 flex items-center justify-center gap-1">
@@ -436,15 +470,7 @@ const CharactersView = ({ data, updateData }) => {
                              </span>
                            </div>
                         )}
-                        
-                        {/* Input Oculto para Subida de Imagen */}
-                        <input 
-                           type="file" 
-                           ref={fileInputRef} 
-                           className="hidden" 
-                           accept="image/*" 
-                           onChange={handleImageUpload}
-                        />
+                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                     </div>
                     {isEditing ? (
                         <input 
@@ -495,29 +521,59 @@ const CharactersView = ({ data, updateData }) => {
                                     </select>
                                 </div>
                             </div>
-
-                            <div className="space-y-4 pt-4 border-t border-stone-100">
-                                <div>
-                                    <label className="text-xs font-bold text-amber-700 uppercase mb-2 block">Trama Personal (Deseo)</label>
-                                    <textarea 
-                                        className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y"
-                                        value={expandedChar.charPlot || ""}
-                                        onChange={(e) => updateChar(expandedChar.id, 'charPlot', e.target.value)}
-                                        placeholder="¿Qué desea conseguir?"
-                                    />
+                            
+                            {/* SECCIONES DINÁMICAS (TOGGLES) */}
+                            <div className="pt-6 border-t border-stone-100">
+                                <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">Detalles Adicionales</h4>
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {sections.map(sec => (
+                                        <button
+                                            key={sec.key}
+                                            onClick={() => updateChar(expandedChar.id, `show${sec.key}`, !expandedChar[`show${sec.key}`])}
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border transition-all flex items-center gap-1 ${expandedChar[`show${sec.key}`] ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-400 border-stone-200'}`}
+                                        >
+                                            <sec.icon size={10} /> {sec.label}
+                                        </button>
+                                    ))}
                                 </div>
-                                <div>
-                                    <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">Subtrama (Conflicto)</label>
-                                    <textarea 
-                                        className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y"
-                                        value={expandedChar.charSubplot || ""}
-                                        onChange={(e) => updateChar(expandedChar.id, 'charSubplot', e.target.value)}
-                                        placeholder="¿Qué le impide conseguirlo?"
-                                    />
+
+                                {sections.map(sec => expandedChar[`show${sec.key}`] && (
+                                    <div key={sec.key} className="mb-4 animate-in fade-in slide-in-from-top-1">
+                                        <label className="text-[10px] font-bold text-amber-600 uppercase mb-1 block">{sec.label}</label>
+                                        <textarea 
+                                            className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[80px] font-serif text-stone-700 resize-y text-sm"
+                                            value={expandedChar[`${sec.key.toLowerCase()}Text`] || ""}
+                                            onChange={(e) => updateChar(expandedChar.id, `${sec.key.toLowerCase()}Text`, e.target.value)}
+                                            placeholder={`Escribe sobre ${sec.label.toLowerCase()}...`}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* TRAMAS DINÁMICAS */}
+                            <div className="pt-6 border-t border-stone-100">
+                                <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                   <Swords size={14}/> Tramas del Personaje
+                                </h4>
+                                <div className="space-y-3">
+                                    {(expandedChar.characterPlots || []).map(plot => (
+                                        <div key={plot.id} className="flex gap-2 items-start">
+                                            <textarea 
+                                                className="flex-1 p-2 bg-white border border-stone-200 rounded text-sm font-serif text-stone-700 focus:border-amber-400 focus:outline-none resize-none h-16"
+                                                value={plot.text}
+                                                onChange={(e) => updateCharacterPlot(expandedChar.id, plot.id, e.target.value)}
+                                                placeholder="Describe una trama específica para este personaje..."
+                                            />
+                                            <button onClick={() => deleteCharacterPlot(expandedChar.id, plot.id)} className="text-stone-300 hover:text-red-400 p-1"><Trash2 size={14}/></button>
+                                        </div>
+                                    ))}
+                                    <button onClick={() => addCharacterPlot(expandedChar.id)} className="text-xs font-bold text-amber-600 hover:text-amber-800 uppercase flex items-center gap-1 mt-2">
+                                        <Plus size={12}/> Agregar Trama
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="pt-4">
+                            <div className="pt-8">
                                 <button onClick={() => deleteChar(expandedChar.id)} className="w-full py-3 text-red-500 border border-red-200 hover:bg-red-50 rounded uppercase text-xs font-bold flex items-center justify-center gap-2 transition-colors">
                                     <Trash2 size={16}/> Eliminar Personaje
                                 </button>
@@ -535,18 +591,31 @@ const CharactersView = ({ data, updateData }) => {
                             </div>
 
                             <div className="space-y-6 pt-6 border-t border-stone-100">
-                                <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100/50">
-                                    <h4 className="text-xs font-bold text-amber-800 uppercase mb-2 tracking-widest">Trama Personal</h4>
-                                    <p className="font-serif text-lg text-stone-800 leading-relaxed italic">
-                                        {expandedChar.charPlot || "Sin definir."}
-                                    </p>
-                                </div>
-                                <div className="p-2">
-                                    <h4 className="text-xs font-bold text-stone-400 uppercase mb-2 tracking-widest">Subtrama & Conflicto</h4>
-                                    <p className="font-serif text-base text-stone-600 leading-relaxed">
-                                        {expandedChar.charSubplot || "Sin definir."}
-                                    </p>
-                                </div>
+                                {sections.map(sec => expandedChar[`show${sec.key}`] && expandedChar[`${sec.key.toLowerCase()}Text`] && (
+                                    <div key={sec.key}>
+                                        <h4 className="text-[10px] font-bold text-amber-800/70 uppercase mb-1 tracking-widest flex items-center gap-1">
+                                           <sec.icon size={10} /> {sec.label}
+                                        </h4>
+                                        <p className="font-serif text-base text-stone-700 leading-relaxed whitespace-pre-wrap">
+                                            {expandedChar[`${sec.key.toLowerCase()}Text`]}
+                                        </p>
+                                    </div>
+                                ))}
+                                
+                                {(expandedChar.characterPlots || []).length > 0 && (
+                                   <div className="mt-6">
+                                      <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest flex items-center gap-1">
+                                         <Swords size={12}/> Tramas Activas
+                                      </h4>
+                                      <ul className="space-y-2">
+                                         {expandedChar.characterPlots.map(p => (
+                                            <li key={p.id} className="p-3 bg-stone-50 border-l-2 border-amber-400 text-sm font-serif text-stone-700">
+                                                {p.text}
+                                            </li>
+                                         ))}
+                                      </ul>
+                                   </div>
+                                )}
                             </div>
                         </>
                     )}
