@@ -20,7 +20,7 @@ import {
   orderBy 
 } from "firebase/firestore";
 import { 
-  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2, Edit2, X, StickyNote, LayoutGrid, Maximize2, Check, Filter, Crown, Shield, Sparkles
+  Book, Users, Map, Plus, Trash2, MoreHorizontal, Globe, Zap, Feather, Star, Columns, Scroll, LogOut, User, ArrowLeft, Loader2, AlertTriangle, Copy, EyeOff, Cloud, CheckCircle2, Edit2, X, StickyNote, LayoutGrid, Maximize2, Check, Filter, Crown, Shield, Sparkles, Upload, Camera, HardDrive
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN FIREBASE ---
@@ -49,6 +49,41 @@ try {
 }
 
 const appId = YOUR_FIREBASE_CONFIG.projectId;
+
+// --- UTILIDADES IMAGEN ---
+const compressImage = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 150; 
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); 
+        resolve(dataUrl);
+      }
+    }
+  })
+};
+
+// Calcula el peso en KB de una cadena Base64
+const getImageSizeKB = (dataURL) => {
+  if (!dataURL) return 0;
+  // Eliminar cabecera "data:image/..." si existe para contar solo los datos
+  const base64String = dataURL.split(',')[1] || dataURL;
+  // Fórmula: (caracteres * 3) / 4 = bytes aproximados
+  const bytes = (base64String.length * 3) / 4;
+  return (bytes / 1024).toFixed(1);
+};
 
 // --- Listas de Opciones para Personajes ---
 const CHAR_IMPORTANCE = ["Principal", "Secundario", "Terciario"];
@@ -148,10 +183,14 @@ const CharacterCard = ({ char, onClick }) => {
       onClick={onClick}
       className="relative aspect-square rounded-lg overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group bg-white border border-stone-200"
     >
-      <div className={`absolute inset-0 ${getBgColor(char.name || "")} flex items-center justify-center`}>
-         <span className="font-serif text-6xl md:text-8xl font-bold text-stone-400/50 select-none">
-            {char.name ? char.name.substring(0, 1).toUpperCase() : "?"}
-         </span>
+      <div className={`absolute inset-0 ${!char.imageUrl ? getBgColor(char.name || "") : 'bg-stone-100'} flex items-center justify-center`}>
+         {char.imageUrl ? (
+            <img src={char.imageUrl} alt={char.name} className="w-full h-full object-cover" />
+         ) : (
+            <span className="font-serif text-6xl md:text-8xl font-bold text-stone-400/50 select-none">
+                {char.name ? char.name.substring(0, 1).toUpperCase() : "?"}
+            </span>
+         )}
       </div>
 
       <div className="absolute top-1 right-1 flex gap-1">
@@ -167,7 +206,6 @@ const CharacterCard = ({ char, onClick }) => {
         )}
       </div>
 
-      {/* TEXTO MÁS GRANDE Y VISIBLE */}
       <div className="absolute bottom-0 left-0 right-0 p-2 pb-3 pt-8 bg-gradient-to-t from-stone-900/95 via-stone-900/70 to-transparent text-white">
         <h4 className="font-serif font-bold text-sm md:text-lg leading-tight truncate drop-shadow-md mb-0.5">
           {char.name || "Sin Nombre"}
@@ -185,18 +223,33 @@ const CharacterCard = ({ char, onClick }) => {
   );
 };
 
-const SquareAvatar = ({ char, size = "md" }) => {
+const SquareAvatar = ({ char, size = "md", onClick, editable }) => {
   const sizes = { sm: "w-10 h-10 text-xs", md: "w-16 h-16 text-xl", lg: "w-24 h-24 text-3xl" };
+  
   return (
-    <div className={`${sizes[size]} bg-stone-100 border border-stone-300 flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden rounded-sm`}>
-      {char.noble === "Si" && (
+    <div 
+      onClick={editable ? onClick : undefined}
+      className={`${sizes[size]} bg-stone-100 border border-stone-300 flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden rounded-sm group ${editable ? 'cursor-pointer hover:border-amber-400' : ''}`}
+    >
+      {char.imageUrl ? (
+        <img src={char.imageUrl} alt="Avatar" className="w-full h-full object-cover" />
+      ) : (
+        <span className="font-serif font-bold text-stone-600">
+            {char?.name ? char.name.substring(0, 2).toUpperCase() : "?"}
+        </span>
+      )}
+      
+      {editable && (
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Camera size={24} className="text-white" />
+        </div>
+      )}
+
+      {!editable && char.noble === "Si" && (
         <div className="absolute top-0 right-0 p-0.5 bg-amber-400 text-white rounded-bl-md shadow-sm z-10">
           <Crown size={10} fill="currentColor" />
         </div>
       )}
-      <span className="font-serif font-bold text-stone-600">
-        {char?.name ? char.name.substring(0, 2).toUpperCase() : "?"}
-      </span>
     </div>
   );
 };
@@ -262,7 +315,8 @@ const CharactersView = ({ data, updateData }) => {
   });
   
   const [expandedCharId, setExpandedCharId] = useState(null);
-  const [isEditing, setIsEditing] = useState(false); // Nuevo estado de edición
+  const [isEditing, setIsEditing] = useState(false); 
+  const fileInputRef = useRef(null); // Ref para el input oculto
 
   if (!data) return <LoadingView />;
 
@@ -276,11 +330,12 @@ const CharactersView = ({ data, updateData }) => {
       csm: "No", 
       noble: "No",
       charPlot: "",
-      charSubplot: ""
+      charSubplot: "",
+      imageUrl: "" // Campo para la imagen
     };
     updateData({ ...data, characters: [newChar, ...data.characters] });
     setExpandedCharId(newChar.id);
-    setIsEditing(true); // Al crear nuevo, entrar directo a editar
+    setIsEditing(true); 
   };
 
   const updateChar = (id, field, val) => {
@@ -291,6 +346,20 @@ const CharactersView = ({ data, updateData }) => {
     if(confirm("¿Eliminar personaje?")) {
         updateData({ ...data, characters: data.characters.filter(c => c.id !== id) }); 
         setExpandedCharId(null);
+    }
+  };
+
+  // Función para manejar la subida de imagen
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+        const compressedBase64 = await compressImage(file);
+        updateChar(expandedCharId, 'imageUrl', compressedBase64);
+    } catch (error) {
+        console.error("Error al procesar imagen", error);
+        alert("Error al procesar la imagen.");
     }
   };
 
@@ -352,8 +421,30 @@ const CharactersView = ({ data, updateData }) => {
              {/* Content */}
              <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
                 <div className="flex flex-col items-center mb-8">
-                    <div className="transform scale-150 mb-6 shadow-lg rounded-sm">
-                        <SquareAvatar char={expandedChar} size="lg" />
+                    <div className="transform scale-150 mb-6 shadow-lg rounded-sm relative">
+                        <SquareAvatar 
+                            char={expandedChar} 
+                            size="lg" 
+                            editable={isEditing}
+                            onClick={() => isEditing && fileInputRef.current.click()}
+                        />
+                        {/* Indicador de peso de la imagen */}
+                        {expandedChar.imageUrl && (
+                           <div className="absolute -bottom-6 left-0 right-0 text-center">
+                             <span className="text-[8px] text-stone-400 flex items-center justify-center gap-1">
+                               <HardDrive size={8} /> {getImageSizeKB(expandedChar.imageUrl)} KB
+                             </span>
+                           </div>
+                        )}
+                        
+                        {/* Input Oculto para Subida de Imagen */}
+                        <input 
+                           type="file" 
+                           ref={fileInputRef} 
+                           className="hidden" 
+                           accept="image/*" 
+                           onChange={handleImageUpload}
+                        />
                     </div>
                     {isEditing ? (
                         <input 
