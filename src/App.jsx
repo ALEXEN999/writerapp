@@ -50,6 +50,35 @@ try {
 
 const appId = YOUR_FIREBASE_CONFIG.projectId;
 
+// --- ESTILOS GLOBALES FORZADOS (OLIMPO PURO) ---
+const GlobalStyles = () => (
+  <style>{`
+    :root { color-scheme: light; }
+    body, html, #root {
+      background-color: #fdfbf7 !important; /* Blanco Mármol */
+      color: #1c1917 !important; /* Texto Piedra Oscura */
+      height: 100%;
+      margin: 0;
+    }
+    /* REGLA MAESTRA: Nada de curvas */
+    * { border-radius: 0px !important; }
+    input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+      border: none;
+      border-bottom: 1px solid #d6d3d1;
+      background: transparent;
+      border-radius: 0 !important;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-bottom: 2px solid #d97706;
+      box-shadow: none !important;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #d6d3d1; }
+  `}</style>
+);
+
 // --- UTILIDADES IMAGEN ---
 const compressImage = (file) => {
   return new Promise((resolve) => {
@@ -60,15 +89,13 @@ const compressImage = (file) => {
       img.src = event.target.result;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 150; 
+        const MAX_WIDTH = 300; 
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
-        
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); 
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
         resolve(dataUrl);
       }
     }
@@ -82,17 +109,18 @@ const getImageSizeKB = (dataURL) => {
   return (bytes / 1024).toFixed(1);
 };
 
-// --- Listas de Opciones por Defecto ---
+// --- LISTAS ---
 const CHAR_IMPORTANCE = ["Principal", "Secundario", "Terciario"];
 const CHAR_CSM = ["Maestro", "Agente", "Lider", "No"];
 const CHAR_NOBLE = ["Si", "No"];
 const DEFAULT_RACES = ["Humano", "Elfo", "Enano"];
 const DEFAULT_WORLDS = ["Tierra"];
 
-// --- Plantillas ---
+// --- PLANTILLAS ---
 const STRUCTURE_TEMPLATES = {
   heroJourney: { name: "El Viaje del Héroe", steps: ["Mundo Ordinario", "La Llamada", "Rechazo", "Mentor", "Umbral", "Pruebas", "Acercamiento", "Ordalía", "Recompensa", "Camino de Vuelta", "Resurrección", "Elixir"] },
-  threeActs: { name: "3 Actos", steps: ["Planteamiento", "Incidente", "Giro 1", "Confrontación", "Midpoint", "Giro 2", "Resolución", "Clímax", "Final"] }
+  // CAMBIO: 3 Actos limpios
+  threeActs: { name: "3 Actos", steps: ["Acto I", "Acto II", "Acto III"] }
 };
 const PLOT_ARCHETYPES = ["Vencer al Monstruo", "Pobreza a Riqueza", "La Búsqueda", "Viaje y Retorno", "Comedia", "Tragedia", "Renacimiento"];
 
@@ -106,40 +134,41 @@ const NEW_STORY_TEMPLATE = {
   diegesis: "", 
   lore: [], 
   species: [{id: 1, name: "Humano"}], 
-  worlds: [{id: 1, name: "Tierra"}],
+  worlds: [{id: 1, name: "Tierra"}], 
   subplots: [], 
   characters: [] 
 };
 
-// --- Componentes Visuales ---
+// --- COMPONENTES VISUALES RECTOS ---
+
 const OlympusBackground = () => (
   <div className="fixed inset-0 pointer-events-none z-0 bg-[#fdfbf7]">
-    <div className="absolute top-0 left-4 bottom-0 w-[1px] bg-stone-200"></div>
-    <div className="absolute top-0 right-4 bottom-0 w-[1px] bg-stone-200"></div>
+    <div className="absolute top-0 left-4 bottom-0 w-[1px] bg-stone-200/50"></div>
+    <div className="absolute top-0 right-4 bottom-0 w-[1px] bg-stone-200/50"></div>
   </div>
 );
 
 const MarbleCard = ({ children, header, onMore, onClick, className="" }) => (
-  <div onClick={onClick} className={`relative bg-white border border-stone-200 shadow-sm mb-6 transition-all hover:shadow-md hover:border-amber-200 group ${onClick ? 'cursor-pointer' : ''} ${className}`}>
-    <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+  <div onClick={onClick} className={`relative bg-white border border-stone-300 shadow-sm mb-6 hover:shadow-md hover:border-amber-400 transition-all group ${onClick ? 'cursor-pointer' : ''} ${className}`}>
+    <div className="absolute top-0 left-0 right-0 h-[3px] bg-amber-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
     {(header || onMore) && (
-      <div className="flex justify-between items-center p-4 border-b border-stone-100 bg-stone-50/50">
-        <div className="font-serif font-bold text-stone-800 text-base uppercase tracking-widest truncate pr-4">{header}</div>
+      <div className="flex justify-between items-center p-4 border-b border-stone-200 bg-stone-50">
+        <div className="font-serif font-bold text-stone-900 text-base uppercase tracking-widest truncate pr-4">{header}</div>
         {onMore && <button onClick={(e) => { e.stopPropagation(); onMore(); }} className="text-stone-400 hover:text-amber-600"><MoreHorizontal size={18}/></button>}
       </div>
     )}
-    <div className="p-1">{children}</div>
+    <div className="p-0">{children}</div>
   </div>
 );
 
 const PillarButton = ({ onClick, children, variant="primary", icon: Icon, disabled, className="" }) => {
   const variants = {
-    primary: `bg-stone-800 text-amber-50 border-stone-800 hover:bg-stone-900 hover:border-amber-400`,
+    primary: `bg-stone-900 text-amber-50 border-stone-900 hover:bg-black hover:border-amber-500`,
     gold: `bg-white text-amber-700 border-amber-500 hover:bg-amber-50`,
-    ghost: `bg-transparent text-stone-500 border-transparent hover:bg-stone-100 hover:text-stone-900`
+    ghost: `bg-transparent text-stone-600 border-transparent hover:bg-stone-100 hover:text-stone-900`
   };
   return (
-    <button onClick={onClick} disabled={disabled} className={`px-4 py-2 font-serif text-[10px] font-bold uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 border disabled:opacity-50 ${variants[variant] || variants.primary} ${className}`}>
+    <button onClick={onClick} disabled={disabled} className={`px-5 py-2 font-serif text-[10px] font-bold uppercase tracking-[0.15em] flex items-center justify-center gap-2 border ${variants[variant] || variants.primary} ${className}`}>
       {Icon && <Icon size={12} />} {children}
     </button>
   );
@@ -153,16 +182,16 @@ const LoadingView = ({ text = "Cargando..." }) => (
 );
 
 const CloudStatus = ({ isSaving }) => (
-  <div className="flex items-center gap-2 px-3 py-1 bg-white/80 border border-stone-200 rounded-full shadow-sm transition-all duration-300">
+  <div className="flex items-center gap-2 px-3 py-1 bg-white border border-stone-300 shadow-sm transition-all duration-300">
     {isSaving ? (
       <>
-        <Loader2 size={14} className="animate-spin text-amber-500" />
-        <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Guardando...</span>
+        <Loader2 size={14} className="animate-spin text-amber-600" />
+        <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Guardando...</span>
       </>
     ) : (
       <>
-        <Cloud size={14} className="text-green-500" />
-        <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">En línea</span>
+        <Cloud size={14} className="text-green-600" />
+        <span className="text-[10px] font-bold text-stone-600 uppercase tracking-wider">En línea</span>
       </>
     )}
   </div>
@@ -179,9 +208,9 @@ const CharacterCard = ({ char, onClick }) => {
   return (
     <div 
       onClick={onClick}
-      className="relative aspect-square rounded-lg overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group bg-white border border-stone-200"
+      className="relative aspect-square overflow-hidden border border-stone-300 hover:border-amber-500 transition-all duration-200 cursor-pointer group bg-white shadow-sm hover:shadow-lg"
     >
-      <div className={`absolute inset-0 ${!char.imageUrl ? getBgColor(char.name || "") : 'bg-stone-100'} flex items-center justify-center`}>
+      <div className={`absolute inset-0 flex items-center justify-center ${!char.imageUrl ? getBgColor(char.name || "") : 'bg-stone-100'}`}>
          {char.imageUrl ? (
             <img src={char.imageUrl} alt={char.name} className="w-full h-full object-cover" />
          ) : (
@@ -191,30 +220,27 @@ const CharacterCard = ({ char, onClick }) => {
          )}
       </div>
 
-      <div className="absolute top-1 right-1 flex gap-1">
+      <div className="absolute top-0 right-0 flex">
         {char.noble === "Si" && (
-          <div className="p-1 bg-amber-400 text-white rounded-full shadow-sm" title="Noble">
-            <Crown size={10} fill="currentColor" />
+          <div className="p-1 bg-amber-500 text-white" title="Noble">
+            <Crown size={12} fill="currentColor" />
           </div>
         )}
         {char.csm && char.csm !== "No" && (
-          <div className="p-1 bg-stone-800 text-white rounded-full shadow-sm" title={`CSM: ${char.csm}`}>
-            <Shield size={10} />
+          <div className="p-1 bg-stone-900 text-white" title={`CSM: ${char.csm}`}>
+            <Shield size={12} />
           </div>
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-2 pb-3 pt-8 bg-gradient-to-t from-stone-900/95 via-stone-900/70 to-transparent text-white">
-        <h4 className="font-serif font-bold text-sm md:text-lg leading-tight truncate drop-shadow-md mb-0.5">
+      <div className="absolute bottom-0 left-0 right-0 p-3 pt-8 bg-gradient-to-t from-stone-900 via-stone-900/80 to-transparent text-white">
+        <h4 className="font-serif font-bold text-sm md:text-base leading-tight truncate drop-shadow-sm mb-0.5">
           {char.name || "Sin Nombre"}
         </h4>
         <div className="flex justify-between items-end">
            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-stone-300 truncate pr-1">
              {char.race || "Desconocido"}
            </span>
-           <div className="opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
-             <Maximize2 size={14} className="text-white" />
-           </div>
         </div>
       </div>
     </div>
@@ -222,29 +248,29 @@ const CharacterCard = ({ char, onClick }) => {
 };
 
 const SquareAvatar = ({ char, size = "md", onClick, editable }) => {
-  const sizes = { sm: "w-10 h-10 text-xs", md: "w-16 h-16 text-xl", lg: "w-24 h-24 text-3xl" };
+  const sizeClasses = { 
+    sm: "w-8 h-8 text-xs", 
+    md: "w-16 h-16 text-xl", 
+    lg: "w-32 h-32 text-4xl",
+    xl: "w-48 h-48 text-6xl" 
+  };
+  
   return (
     <div 
       onClick={editable ? onClick : undefined}
-      className={`${sizes[size]} bg-stone-100 border border-stone-300 flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden rounded-sm group ${editable ? 'cursor-pointer hover:border-amber-400' : ''}`}
+      className={`${sizeClasses[size] || sizeClasses.md} bg-stone-100 border border-stone-300 flex items-center justify-center shrink-0 shadow-inner relative overflow-hidden group ${editable ? 'cursor-pointer hover:border-amber-400' : ''}`}
     >
       {char.imageUrl ? (
         <img src={char.imageUrl} alt="Avatar" className="w-full h-full object-cover" />
       ) : (
-        <span className="font-serif font-bold text-stone-600">
+        <span className="font-serif font-bold text-stone-400 select-none">
             {char?.name ? char.name.substring(0, 2).toUpperCase() : "?"}
         </span>
       )}
       
       {editable && (
-        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <Camera size={24} className="text-white" />
-        </div>
-      )}
-
-      {!editable && char.noble === "Si" && (
-        <div className="absolute top-0 right-0 p-0.5 bg-amber-400 text-white rounded-bl-md shadow-sm z-10">
-          <Crown size={10} fill="currentColor" />
         </div>
       )}
     </div>
@@ -255,25 +281,12 @@ const SquareAvatar = ({ char, size = "md", onClick, editable }) => {
 const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpandedItemId, editingItem, setEditingItem }) => {
     if (!item) return null;
     const fileInputRef = useRef(null);
-
-    // Configuración de campos según el tipo (Mundo o Especie)
     const isWorld = listName === 'worlds';
     const isSpecies = listName === 'species';
 
-    // Filtrar personajes que pertenecen a este mundo
     const worldCharacters = isWorld ? (data.characters || []).filter(c => c.world === item.name) : [];
-    
-    // Filtrar especies que pertenecen a este mundo (Origen)
-    const worldSpecies = isWorld ? (data.species || []).filter(s => s.worldOrigin === item.name) : [];
+    const worldSpecies = isWorld ? (data.species || []).filter(s => (s.residentSpecies || []).includes(item.name) || s.worldOrigin === item.name) : [];
 
-    const sections = [
-        { key: 'Appearance', label: 'Aspecto' },
-        { key: 'World', label: 'Mundo Origen', isSelector: true }, 
-        { key: 'Power', label: 'Poderes / Magia' },
-        { key: 'Description', label: 'Descripción' },
-    ];
-
-    // Manejo de imagen para Especies/Mundos
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -281,9 +294,17 @@ const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpande
             const compressedBase64 = await compressImage(file);
             updateItem(listName, item.id, 'imageUrl', compressedBase64);
         } catch (error) {
-            console.error("Error al procesar imagen", error);
-            alert("Error al procesar la imagen.");
+            console.error("Error:", error);
+            alert("Error al procesar imagen.");
         }
+    };
+
+    const toggleSpeciesForWorld = (speciesName) => {
+        const currentSpecies = item.residentSpecies || [];
+        const newSpecies = currentSpecies.includes(speciesName)
+            ? currentSpecies.filter(s => s !== speciesName)
+            : [...currentSpecies, speciesName];
+        updateItem(listName, item.id, 'residentSpecies', newSpecies);
     };
 
     return (
@@ -302,145 +323,86 @@ const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpande
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
                 <div className="mb-8 flex flex-col items-center">
-                    {/* AVATAR DE ESPECIE/MUNDO */}
-                    <div className="transform scale-125 mb-6 shadow-lg rounded-sm relative">
-                        <SquareAvatar 
-                            char={{ name: item.name, imageUrl: item.imageUrl }} 
-                            size="lg" 
-                            editable={editingItem}
-                            onClick={() => editingItem && fileInputRef.current.click()}
-                        />
-                        {item.imageUrl && (
-                           <div className="absolute -bottom-6 left-0 right-0 text-center">
-                             <span className="text-[8px] text-stone-400 flex items-center justify-center gap-1">
-                               <HardDrive size={8} /> {getImageSizeKB(item.imageUrl)} KB
-                             </span>
-                           </div>
-                        )}
+                    <div className="mb-6 shadow-lg border border-stone-300 bg-white p-1 relative">
+                        <SquareAvatar char={{ name: item.name, imageUrl: item.imageUrl }} size="xl" editable={editingItem} onClick={() => editingItem && fileInputRef.current.click()} />
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                     </div>
-
                     {editingItem ? (
-                         <input 
-                         className="font-serif font-bold text-4xl text-center text-stone-900 bg-transparent border-b border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none w-full placeholder:text-stone-300 pb-1"
-                         value={item.name} 
-                         onChange={(e) => updateItem(listName, item.id, 'name', e.target.value)}
-                         placeholder="Nombre"
-                       />
+                         <input className="font-serif font-bold text-4xl text-center text-stone-900 bg-transparent border-b-2 border-transparent hover:border-stone-300 focus:border-amber-500 focus:outline-none w-full placeholder:text-stone-300 pb-1 rounded-none" value={item.name} onChange={(e) => updateItem(listName, item.id, 'name', e.target.value)} placeholder="Nombre"/>
                     ) : (
                         <h1 className="font-serif font-bold text-4xl text-stone-900 text-center">{item.name}</h1>
                     )}
                 </div>
 
-                <div className="space-y-6">
-                    
-                    {/* 1. SECCIÓN DE RAZAS (Solo para Mundos - DERIVADO AUTOMÁTICO) */}
+                <div className="space-y-8">
                     {isWorld && (
-                        <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
-                            <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-3 flex items-center gap-2">
-                                <Dna size={12}/> Razas Autóctonas
-                            </h4>
-                            {worldSpecies.length > 0 ? (
+                        <>
+                        <div className="bg-white p-6 border border-stone-300 shadow-sm">
+                            <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-4 flex items-center gap-2 border-b border-stone-100 pb-2"><Dna size={12}/> Razas Autóctonas</h4>
+                            {editingItem ? (
                                 <div className="flex flex-wrap gap-2">
-                                    {worldSpecies.map((sp) => (
-                                        <span key={sp.id} className="px-3 py-1 rounded-full bg-stone-800 text-amber-50 text-xs font-bold border border-stone-800 shadow-sm flex items-center gap-2">
-                                            {sp.imageUrl && <img src={sp.imageUrl} className="w-4 h-4 rounded-full object-cover" />}
-                                            {sp.name}
-                                        </span>
-                                    ))}
+                                    {(data.species || []).map(sp => {
+                                        const name = typeof sp === 'string' ? sp : sp.name;
+                                        const isSelected = (item.residentSpecies || []).includes(name);
+                                        return (
+                                            <button key={sp.id || sp} onClick={() => toggleSpeciesForWorld(name)} className={`px-3 py-1 text-xs font-bold border transition-colors ${isSelected ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-500 border-stone-200'}`}>
+                                                {name}
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             ) : (
-                                <p className="text-xs text-stone-400 italic">
-                                    Ninguna especie tiene este mundo como origen.
-                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {item.residentSpecies && item.residentSpecies.length > 0 ? item.residentSpecies.map((sp, i) => <span key={i} className="px-3 py-1 bg-stone-900 text-amber-50 text-xs font-bold">{sp}</span>) : <p className="text-xs text-stone-400 italic">Ninguna.</p>}
+                                </div>
                             )}
                         </div>
-                    )}
-
-                    {/* 2. SECCIÓN DE DIÉGESIS (Solo para Mundos) */}
-                    {isWorld && (
-                        <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
-                            <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2">
-                                <FlaskConical size={12}/> Diégesis Local
-                            </h4>
-                            {editingItem ? (
-                                <textarea 
-                                    className="w-full p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 text-sm"
-                                    value={item.diegesis || ""}
-                                    onChange={(e) => updateItem(listName, item.id, 'diegesis', e.target.value)}
-                                    placeholder="Leyes físicas, magia específica de este mundo..."
-                                />
-                            ) : (
-                                <p className="font-serif text-stone-700 text-sm whitespace-pre-wrap leading-relaxed">
-                                    {item.diegesis || "Sin información específica."}
-                                </p>
-                            )}
+                        <div className="bg-white p-6 border border-stone-300 shadow-sm">
+                             <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2 border-b border-stone-100 pb-2"><FlaskConical size={12}/> Diégesis Local</h4>
+                             {editingItem ? <textarea className="w-full p-3 bg-stone-50 border border-stone-300 h-32 text-sm font-serif" value={item.diegesis||""} onChange={(e)=>updateItem(listName,item.id,'diegesis',e.target.value)}/> : <p className="font-serif text-stone-800 text-sm whitespace-pre-wrap">{item.diegesis||"Sin datos."}</p>}
                         </div>
+                        </>
                     )}
 
-                    {/* 3. SECCIÓN DE PERSONAJES (Solo para Mundos, Read-Only derivado) */}
                     {isWorld && (
-                        <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
-                            <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-3 flex items-center gap-2">
-                                <Users2 size={12}/> Habitantes Conocidos
-                            </h4>
+                        <div className="bg-white p-6 border border-stone-300 shadow-sm">
+                            <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-3 flex items-center gap-2 border-b border-stone-100 pb-2"><Users2 size={12}/> Habitantes Conocidos</h4>
                             {worldCharacters.length > 0 ? (
                                 <div className="flex flex-wrap gap-3">
                                     {worldCharacters.map(char => (
-                                        <div key={char.id} className="flex items-center gap-2 bg-stone-50 p-2 rounded-md border border-stone-100">
-                                            <div className="w-6 h-6 rounded-sm overflow-hidden bg-stone-200">
+                                        <div key={char.id} className="flex items-center gap-2 bg-stone-50 p-2 border border-stone-200 hover:border-amber-400 transition-colors">
+                                            <div className="w-6 h-6 overflow-hidden bg-stone-200 border border-stone-300">
                                                  {char.imageUrl ? <img src={char.imageUrl} className="w-full h-full object-cover" /> : <span className="flex items-center justify-center h-full w-full font-serif text-xs font-bold text-stone-500">{char.name.charAt(0)}</span>}
                                             </div>
                                             <span className="text-xs font-bold text-stone-700">{char.name}</span>
                                         </div>
                                     ))}
                                 </div>
-                            ) : (
-                                <p className="text-xs text-stone-400 italic">Ningún personaje asignado a este mundo.</p>
-                            )}
+                            ) : (<p className="text-xs text-stone-400 italic">Ningún personaje asignado a este mundo.</p>)}
                         </div>
                     )}
 
-                    {/* 4. SECCIÓN DESCRIPCIÓN (Común) */}
-                    <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
-                        <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2">
-                            <StickyNote size={12}/> Descripción General
-                        </h4>
+                    <div className="bg-white p-6 border border-stone-300 shadow-sm">
+                        <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2 border-b border-stone-100 pb-2"><StickyNote size={12}/> Descripción General</h4>
                         {editingItem ? (
-                            <textarea 
-                                className="w-full p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[120px] font-serif text-stone-700 text-sm"
-                                value={item.description || ""}
-                                onChange={(e) => updateItem(listName, item.id, 'description', e.target.value)}
-                                placeholder="Descripción general..."
-                            />
-                        ) : (
-                            <p className="font-serif text-stone-700 text-sm whitespace-pre-wrap leading-relaxed">
-                                {item.description || "Sin descripción."}
-                            </p>
-                        )}
+                            <textarea className="w-full p-3 bg-stone-50 border border-stone-300 h-32 text-sm font-serif" value={item.description||""} onChange={(e)=>updateItem(listName,item.id,'description',e.target.value)} placeholder="Descripción general..." />
+                        ) : (<p className="font-serif text-stone-700 text-sm whitespace-pre-wrap leading-relaxed">{item.description || "Sin descripción."}</p>)}
                     </div>
 
-                    {/* SECCIONES ESPECÍFICAS DE ESPECIES (Aspecto, Poderes) */}
                     {isSpecies && (
                         <>
-                             <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
-                                <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2"><Eye size={12}/> Aspecto</h4>
+                           <div className="bg-white p-6 border border-stone-300 shadow-sm">
+                                <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2 border-b border-stone-100 pb-2"><Eye size={12}/> Aspecto</h4>
+                                {editingItem ? <textarea className="w-full p-3 bg-stone-50 border border-stone-300 h-24 text-sm font-serif" value={item.appearance||""} onChange={(e)=>updateItem(listName,item.id,'appearance',e.target.value)} placeholder="Características físicas..." /> : <p className="font-serif text-stone-700 text-sm">{item.appearance||"Sin definir."}</p>}
+                           </div>
+                           <div className="bg-white p-6 border border-stone-300 shadow-sm">
+                                <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2 border-b border-stone-100 pb-2"><Zap size={12}/> Poderes</h4>
+                                {editingItem ? <textarea className="w-full p-3 bg-stone-50 border border-stone-300 h-24 text-sm font-serif" value={item.powers||""} onChange={(e)=>updateItem(listName,item.id,'powers',e.target.value)} placeholder="Habilidades mágicas..." /> : <p className="font-serif text-stone-700 text-sm">{item.powers || "Sin definir."}</p>}
+                           </div>
+                           <div className="bg-white p-6 border border-stone-300 shadow-sm">
+                                <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2 border-b border-stone-100 pb-2"><Globe size={12}/> Mundo de Origen</h4>
                                 {editingItem ? (
-                                    <textarea className="w-full p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[80px] font-serif text-stone-700 text-sm" value={item.appearance || ""} onChange={(e) => updateItem(listName, item.id, 'appearance', e.target.value)} placeholder="Características físicas..." />
-                                ) : (<p className="font-serif text-stone-700 text-sm">{item.appearance || "Sin definir."}</p>)}
-                             </div>
-                             
-                             <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
-                                <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2"><Zap size={12}/> Poderes</h4>
-                                {editingItem ? (
-                                    <textarea className="w-full p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[80px] font-serif text-stone-700 text-sm" value={item.powers || ""} onChange={(e) => updateItem(listName, item.id, 'powers', e.target.value)} placeholder="Habilidades mágicas o naturales..." />
-                                ) : (<p className="font-serif text-stone-700 text-sm">{item.powers || "Sin definir."}</p>)}
-                             </div>
-
-                             <div className="bg-white p-4 border border-stone-200 rounded-lg shadow-sm">
-                                <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 flex items-center gap-2"><Globe size={12}/> Mundo de Origen</h4>
-                                {editingItem ? (
-                                    <select className="w-full p-2 bg-stone-50 rounded border border-stone-200 text-sm font-serif" value={item.worldOrigin || ""} onChange={(e) => updateItem(listName, item.id, 'worldOrigin', e.target.value)}>
+                                    <select className="w-full p-3 bg-stone-50 border border-stone-300 text-sm font-serif focus:border-amber-500 outline-none" value={item.worldOrigin || ""} onChange={(e) => updateItem(listName, item.id, 'worldOrigin', e.target.value)}>
                                         <option value="">Selecciona un Mundo...</option>
                                         {(data.worlds || []).map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
                                     </select>
@@ -450,7 +412,7 @@ const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpande
                     )}
 
                     {editingItem && (
-                         <button onClick={() => deleteItem(listName, item.id)} className="w-full py-3 text-red-500 border border-red-200 hover:bg-red-50 rounded uppercase text-xs font-bold flex items-center justify-center gap-2 mt-8">
+                         <button onClick={() => deleteItem(listName, item.id)} className="w-full py-3 text-red-600 border border-red-200 hover:bg-red-50 uppercase text-xs font-bold flex items-center justify-center gap-2 mt-8 rounded-none transition-colors">
                             <Trash2 size={16}/> Eliminar
                         </button>
                     )}
@@ -460,12 +422,11 @@ const EntityEditor = ({ listName, item, data, updateItem, deleteItem, setExpande
     );
   };
 
-// --- COMPONENTE SELECTOR DE FILTRO EXTRAÍDO ---
 const FilterSelect = ({ label, value, options, onChange }) => (
     <div className="flex flex-col w-full">
       <label className="text-[8px] font-bold text-stone-400 uppercase mb-1 ml-1 tracking-widest">{label}</label>
       <select 
-        className="bg-white border border-stone-200 text-stone-700 text-[10px] font-bold rounded-md p-1.5 focus:outline-none focus:border-amber-400 cursor-pointer w-full"
+        className="bg-white border border-stone-300 text-stone-700 text-[10px] font-bold p-2 focus:outline-none focus:border-amber-400 cursor-pointer w-full rounded-none"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -487,16 +448,16 @@ const StructureView = ({ data, updateData }) => {
     <div className="pb-32 px-4 md:px-8 pt-6 animate-in fade-in">
       <div className="flex justify-center gap-2 mb-8 overflow-x-auto pb-2">
         {Object.entries(STRUCTURE_TEMPLATES).map(([key, tpl]) => (
-          <button key={key} onClick={() => applyTemplate(key)} className={`px-4 py-2 text-[10px] font-bold uppercase border ${data.structureType === key ? 'bg-stone-800 text-white' : 'bg-white text-stone-500'}`}>{tpl.name}</button>
+          <button key={key} onClick={() => applyTemplate(key)} className={`px-5 py-2 text-[10px] font-bold uppercase border ${data.structureType === key ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-300 hover:bg-stone-50'}`}>{tpl.name}</button>
         ))}
       </div>
       <div className="border-l border-stone-300 pl-8 ml-4">
         {(data.structurePoints || []).map((point) => (
           <div key={point.id} className="mb-8 relative">
-            <div className={`absolute -left-[41px] top-1 w-5 h-5 border-2 transform rotate-45 cursor-pointer ${point.completed ? 'bg-amber-500 border-amber-500' : 'bg-white border-stone-300'}`} onClick={() => updateData({...data, structurePoints: data.structurePoints.map(p => p.id === point.id ? {...p, completed: !p.completed} : p)})}></div>
+            <div className={`absolute -left-[41px] top-1 w-5 h-5 border-2 transform rotate-45 cursor-pointer transition-all ${point.completed ? 'bg-amber-500 border-amber-500' : 'bg-white border-stone-300 hover:border-amber-400'}`} onClick={() => updateData({...data, structurePoints: data.structurePoints.map(p => p.id === point.id ? {...p, completed: !p.completed} : p)})}></div>
             <div className={point.completed ? 'opacity-50' : ''}>
               <h3 className="font-serif text-lg text-stone-900 mb-2">{point.title}</h3>
-              <textarea className="w-full p-4 bg-white border border-stone-200 text-stone-700 font-serif focus:outline-none focus:border-amber-400" rows={3} value={point.content} onChange={(e) => updateData({...data, structurePoints: data.structurePoints.map(p => p.id === point.id ? {...p, content: e.target.value} : p)})} placeholder="..." />
+              <textarea className="w-full p-4 bg-white border border-stone-200 text-stone-700 font-serif focus:outline-none focus:border-amber-400 rounded-none" rows={3} value={point.content} onChange={(e) => updateData({...data, structurePoints: data.structurePoints.map(p => p.id === point.id ? {...p, content: e.target.value} : p)})} placeholder="..." />
             </div>
           </div>
         ))}
@@ -514,7 +475,7 @@ const WorldView = ({ data, updateData }) => {
   if (!data) return <LoadingView />;
 
   const addItem = (listName) => {
-    const newItem = { id: Date.now(), name: `Nuevo ${listName === 'species' ? 'Especie' : 'Mundo'}` };
+    const newItem = { id: Date.now(), name: `Nuevo ${listName === 'species' ? 'Especie' : 'Mundo'}`, imageUrl: "" };
     updateData({ ...data, [listName]: [...(data[listName] || []), newItem] });
     setExpandedItemId(newItem.id);
     setActiveListType(listName);
@@ -540,18 +501,18 @@ const WorldView = ({ data, updateData }) => {
   const expandedItem = expandedItemId ? (activeListType === 'species' ? speciesList : worldsList).find(i => i.id === expandedItemId) : null;
 
   return (
-    <div className="p-4 md:p-6 pb-32 space-y-10 animate-in fade-in">
+    <div className="p-4 md:p-6 pb-32 space-y-12 animate-in fade-in">
         <section>
-            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 border-b border-stone-200 pb-2 flex items-center gap-2">
+            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-200 pb-2 flex items-center gap-2">
                <Globe size={14} /> Mundos
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div onClick={() => addItem('worlds')} className="aspect-square rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:text-amber-600 hover:border-amber-400 cursor-pointer transition-all group bg-stone-50/50">
+                <div onClick={() => addItem('worlds')} className="aspect-square border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:text-amber-600 hover:border-amber-400 cursor-pointer transition-all group bg-stone-50/50">
                     <Plus size={24} className="mb-2 group-hover:scale-110 transition-transform"/>
                     <span className="text-[9px] font-bold uppercase tracking-wider">Nuevo Mundo</span>
                 </div>
                 {worldsList.map(item => (
-                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('worlds'); setEditingItem(false); }} className="aspect-square rounded-lg bg-white border border-stone-200 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all overflow-hidden">
+                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('worlds'); setEditingItem(false); }} className="aspect-square bg-white border border-stone-300 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all overflow-hidden hover:border-amber-400">
                             {item.imageUrl ? (
                                 <img src={item.imageUrl} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity" />
                             ) : (
@@ -565,16 +526,16 @@ const WorldView = ({ data, updateData }) => {
         </section>
 
         <section>
-            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 border-b border-stone-200 pb-2 flex items-center gap-2">
+            <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-200 pb-2 flex items-center gap-2">
                <Dna size={14} /> Especies
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div onClick={() => addItem('species')} className="aspect-square rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:text-amber-600 hover:border-amber-400 cursor-pointer transition-all group bg-stone-50/50">
+                <div onClick={() => addItem('species')} className="aspect-square border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:text-amber-600 hover:border-amber-400 cursor-pointer transition-all group bg-stone-50/50">
                     <Plus size={24} className="mb-2 group-hover:scale-110 transition-transform"/>
                     <span className="text-[9px] font-bold uppercase tracking-wider">Nueva Especie</span>
                 </div>
                 {speciesList.map(item => (
-                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('species'); setEditingItem(false); }} className="aspect-square rounded-lg bg-white border border-stone-200 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all overflow-hidden">
+                        <div key={item.id} onClick={() => { setExpandedItemId(item.id); setActiveListType('species'); setEditingItem(false); }} className="aspect-square bg-white border border-stone-300 shadow-sm hover:shadow-md flex flex-col items-center justify-center p-4 text-center cursor-pointer relative group transition-all overflow-hidden hover:border-amber-400">
                              {item.imageUrl ? (
                                 <img src={item.imageUrl} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity" />
                             ) : (
@@ -589,7 +550,7 @@ const WorldView = ({ data, updateData }) => {
 
         <section>
              <MarbleCard header="Leyes de la Realidad">
-                <textarea className="w-full p-4 min-h-[300px] bg-transparent focus:outline-none font-serif text-lg leading-relaxed resize-none text-stone-800 placeholder:text-stone-300" placeholder="Escribe aquí la cosmogonía, física y magia de tu universo..." value={data.diegesis || ""} onChange={(e) => updateData({...data, diegesis: e.target.value})} />
+                <textarea className="w-full p-6 min-h-[300px] bg-transparent focus:outline-none font-serif text-lg leading-relaxed resize-none text-stone-800 placeholder:text-stone-300" placeholder="Escribe aquí la cosmogonía, física y magia de tu universo..." value={data.diegesis || ""} onChange={(e) => updateData({...data, diegesis: e.target.value})} />
             </MarbleCard>
         </section>
 
@@ -609,11 +570,11 @@ const WorldView = ({ data, updateData }) => {
   );
 };
 
-// --- NUEVA VISTA DE PERSONAJES (FILTROS DINÁMICOS Y GRID LIMPIO) ---
+// --- NUEVA VISTA DE PERSONAJES ---
 const CharactersView = ({ data, updateData }) => {
     const getNames = (list) => (list || []).map(i => typeof i === 'string' ? i : i.name);
-    const dynamicRaces = getNames(data.species).length > 0 ? getNames(data.species) : CHAR_RACES;
-    const dynamicWorlds = getNames(data.worlds).length > 0 ? getNames(data.worlds) : CHAR_WORLDS;
+    const dynamicRaces = getNames(data.species).length > 0 ? getNames(data.species) : DEFAULT_RACES;
+    const dynamicWorlds = getNames(data.worlds).length > 0 ? getNames(data.worlds) : DEFAULT_WORLDS;
 
   const [filters, setFilters] = useState({
     importance: "Todas",
@@ -708,7 +669,7 @@ const CharactersView = ({ data, updateData }) => {
     <div className="flex flex-col w-full">
       <label className="text-[8px] font-bold text-stone-400 uppercase mb-1 ml-1 tracking-widest">{label}</label>
       <select 
-        className="bg-white border border-stone-200 text-stone-700 text-[10px] font-bold rounded-md p-1.5 focus:outline-none focus:border-amber-400 cursor-pointer w-full"
+        className="bg-white border border-stone-300 text-stone-700 text-[10px] font-bold p-1.5 focus:outline-none focus:border-amber-400 cursor-pointer w-full rounded-none"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -719,7 +680,7 @@ const CharactersView = ({ data, updateData }) => {
   );
 
   const DataBadge = ({ label, value }) => (
-    <div className="flex flex-col bg-stone-50 p-2 rounded border border-stone-100">
+    <div className="flex flex-col bg-stone-50 p-2 border border-stone-200">
         <span className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-1">{label}</span>
         <span className="text-xs font-serif font-bold text-stone-800">{value || "-"}</span>
     </div>
@@ -746,11 +707,11 @@ const CharactersView = ({ data, updateData }) => {
                  </button>
                  
                  {isEditing ? (
-                     <button onClick={() => setIsEditing(false)} className="text-amber-600 hover:text-amber-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200">
+                     <button onClick={() => setIsEditing(false)} className="text-amber-600 hover:text-amber-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-4 py-2 border border-amber-200 rounded-none hover:bg-amber-50">
                         <Check size={16}/> Listo
                      </button>
                  ) : (
-                     <button onClick={() => setIsEditing(true)} className="text-stone-500 hover:text-amber-600 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-white px-4 py-1.5 rounded-full border border-stone-200 hover:border-amber-400 transition-all">
+                     <button onClick={() => setIsEditing(true)} className="text-stone-500 hover:text-amber-600 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-white px-4 py-2 border border-stone-200 hover:border-amber-400 transition-all rounded-none">
                         <Edit2 size={14}/> Editar
                      </button>
                  )}
@@ -759,10 +720,10 @@ const CharactersView = ({ data, updateData }) => {
              {/* Content */}
              <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
                 <div className="flex flex-col items-center mb-8">
-                    <div className="transform scale-150 mb-6 shadow-lg rounded-sm relative">
+                    <div className="transform mb-6 shadow-lg border border-stone-300 bg-white p-1 relative">
                         <SquareAvatar 
                             char={expandedChar} 
-                            size="lg" 
+                            size="xl" 
                             editable={isEditing}
                             onClick={() => isEditing && fileInputRef.current.click()}
                         />
@@ -777,7 +738,7 @@ const CharactersView = ({ data, updateData }) => {
                     </div>
                     {isEditing ? (
                         <input 
-                          className="font-serif font-bold text-3xl text-center text-stone-900 bg-transparent border-b border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none w-full placeholder:text-stone-300 pb-1"
+                          className="font-serif font-bold text-3xl text-center text-stone-900 bg-transparent border-b-2 border-transparent hover:border-stone-300 focus:border-amber-500 focus:outline-none w-full placeholder:text-stone-300 pb-1 rounded-none"
                           value={expandedChar.name} 
                           onChange={(e) => updateChar(expandedChar.id, 'name', e.target.value)}
                           placeholder="Nombre del Personaje"
@@ -787,64 +748,66 @@ const CharactersView = ({ data, updateData }) => {
                     )}
                 </div>
 
-                <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm space-y-8">
+                <div className="bg-white border border-stone-200 p-8 shadow-sm space-y-10">
                     
                     {/* MODO EDICIÓN */}
                     {isEditing ? (
                         <>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                 <div className="flex flex-col">
                                     <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Importancia</label>
-                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.importance} onChange={(e) => updateChar(expandedChar.id, 'importance', e.target.value)}>
+                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.importance} onChange={(e) => updateChar(expandedChar.id, 'importance', e.target.value)}>
                                         {CHAR_IMPORTANCE.map(o => <option key={o} value={o}>{o}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex flex-col">
                                     <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Raza</label>
-                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.race} onChange={(e) => updateChar(expandedChar.id, 'race', e.target.value)}>
+                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.race} onChange={(e) => updateChar(expandedChar.id, 'race', e.target.value)}>
                                         {dynamicRaces.map(o => <option key={o} value={o}>{o}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex flex-col">
                                     <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Mundo</label>
-                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.world} onChange={(e) => updateChar(expandedChar.id, 'world', e.target.value)}>
+                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.world} onChange={(e) => updateChar(expandedChar.id, 'world', e.target.value)}>
                                         {dynamicWorlds.map(o => <option key={o} value={o}>{o}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex flex-col">
                                     <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">CSM</label>
-                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.csm} onChange={(e) => updateChar(expandedChar.id, 'csm', e.target.value)}>
+                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.csm} onChange={(e) => updateChar(expandedChar.id, 'csm', e.target.value)}>
                                         {CHAR_CSM.map(o => <option key={o} value={o}>{o}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex flex-col">
                                     <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Noble</label>
-                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.noble} onChange={(e) => updateChar(expandedChar.id, 'noble', e.target.value)}>
+                                    <select className="p-2 bg-stone-50 border border-stone-300 focus:border-amber-500 outline-none rounded-none" value={expandedChar.noble} onChange={(e) => updateChar(expandedChar.id, 'noble', e.target.value)}>
                                         {CHAR_NOBLE.map(o => <option key={o} value={o}>{o}</option>)}
                                     </select>
                                 </div>
                             </div>
                             
                             {/* SECCIONES DINÁMICAS (TOGGLES) */}
-                            <div className="pt-6 border-t border-stone-100">
-                                <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">Detalles Adicionales</h4>
-                                <div className="flex flex-wrap gap-2 mb-4">
+                            <div className="pt-8 border-t border-stone-100">
+                                <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4">Detalles Adicionales</h4>
+                                <div className="flex flex-wrap gap-3 mb-6">
                                     {sections.map(sec => (
                                         <button
                                             key={sec.key}
                                             onClick={() => updateChar(expandedChar.id, `show${sec.key}`, !expandedChar[`show${sec.key}`])}
-                                            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border transition-all flex items-center gap-1 ${expandedChar[`show${sec.key}`] ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-400 border-stone-200'}`}
+                                            className={`px-4 py-2 text-[10px] font-bold uppercase border transition-all flex items-center gap-2 ${expandedChar[`show${sec.key}`] ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-400 border-stone-200 hover:border-amber-500'}`}
                                         >
-                                            <sec.icon size={10} /> {sec.label}
+                                            <sec.icon size={12} /> {sec.label}
                                         </button>
                                     ))}
                                 </div>
 
                                 {sections.map(sec => expandedChar[`show${sec.key}`] && (
-                                    <div key={sec.key} className="mb-4 animate-in fade-in slide-in-from-top-1">
-                                        <label className="text-[10px] font-bold text-amber-600 uppercase mb-1 block">{sec.label}</label>
+                                    <div key={sec.key} className="mb-6 animate-in fade-in slide-in-from-top-2">
+                                        <label className="text-[10px] font-bold text-amber-700 uppercase mb-2 block flex items-center gap-2">
+                                           <sec.icon size={12} /> {sec.label}
+                                        </label>
                                         <textarea 
-                                            className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[80px] font-serif text-stone-700 resize-y text-sm"
+                                            className="w-full p-4 bg-stone-50 border border-stone-300 focus:border-amber-500 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y text-sm rounded-none"
                                             value={expandedChar[`${sec.key.toLowerCase()}Text`] || ""}
                                             onChange={(e) => updateChar(expandedChar.id, `${sec.key.toLowerCase()}Text`, e.target.value)}
                                             placeholder={`Escribe sobre ${sec.label.toLowerCase()}...`}
@@ -854,30 +817,30 @@ const CharactersView = ({ data, updateData }) => {
                             </div>
 
                             {/* TRAMAS DINÁMICAS */}
-                            <div className="pt-6 border-t border-stone-100">
-                                <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <div className="pt-8 border-t border-stone-200">
+                                <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                                    <Swords size={14}/> Tramas del Personaje
                                 </h4>
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     {(expandedChar.characterPlots || []).map(plot => (
-                                        <div key={plot.id} className="flex gap-2 items-start">
+                                        <div key={plot.id} className="flex gap-3 items-start">
                                             <textarea 
-                                                className="flex-1 p-2 bg-white border border-stone-200 rounded text-sm font-serif text-stone-700 focus:border-amber-400 focus:outline-none resize-none h-16"
+                                                className="flex-1 p-3 bg-white border border-stone-300 text-sm font-serif text-stone-700 focus:border-amber-500 focus:outline-none resize-none h-20 rounded-none"
                                                 value={plot.text}
                                                 onChange={(e) => updateCharacterPlot(expandedChar.id, plot.id, e.target.value)}
                                                 placeholder="Describe una trama específica para este personaje..."
                                             />
-                                            <button onClick={() => deleteCharacterPlot(expandedChar.id, plot.id)} className="text-stone-300 hover:text-red-400 p-1"><Trash2 size={14}/></button>
+                                            <button onClick={() => deleteCharacterPlot(expandedChar.id, plot.id)} className="text-stone-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
                                         </div>
                                     ))}
-                                    <button onClick={() => addCharacterPlot(expandedChar.id)} className="text-xs font-bold text-amber-600 hover:text-amber-800 uppercase flex items-center gap-1 mt-2">
-                                        <Plus size={12}/> Agregar Trama
+                                    <button onClick={() => addCharacterPlot(expandedChar.id)} className="text-xs font-bold text-amber-600 hover:text-amber-800 uppercase flex items-center gap-2 mt-2 bg-amber-50 px-4 py-2 border border-amber-100 hover:border-amber-300 w-full justify-center transition-colors">
+                                        <Plus size={14}/> Agregar Trama
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="pt-8">
-                                <button onClick={() => deleteChar(expandedChar.id)} className="w-full py-3 text-red-500 border border-red-200 hover:bg-red-50 rounded uppercase text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+                            <div className="pt-10">
+                                <button onClick={() => deleteChar(expandedChar.id)} className="w-full py-4 text-red-600 border border-red-200 hover:bg-red-50 uppercase text-xs font-bold flex items-center justify-center gap-2 transition-colors rounded-none">
                                     <Trash2 size={16}/> Eliminar Personaje
                                 </button>
                             </div>
@@ -893,26 +856,26 @@ const CharactersView = ({ data, updateData }) => {
                                 <DataBadge label="Noble" value={expandedChar.noble} />
                             </div>
 
-                            <div className="space-y-6 pt-6 border-t border-stone-100">
+                            <div className="space-y-8 pt-8 border-t border-stone-100">
                                 {sections.map(sec => expandedChar[`show${sec.key}`] && expandedChar[`${sec.key.toLowerCase()}Text`] && (
                                     <div key={sec.key}>
-                                        <h4 className="text-[10px] font-bold text-amber-800/70 uppercase mb-1 tracking-widest flex items-center gap-1">
-                                           <sec.icon size={10} /> {sec.label}
+                                        <h4 className="text-[10px] font-bold text-amber-800/60 uppercase mb-2 tracking-widest flex items-center gap-2">
+                                           <sec.icon size={12} /> {sec.label}
                                         </h4>
-                                        <p className="font-serif text-base text-stone-700 leading-relaxed whitespace-pre-wrap">
+                                        <p className="font-serif text-base text-stone-800 leading-relaxed whitespace-pre-wrap pl-1 border-l-2 border-amber-200">
                                             {expandedChar[`${sec.key.toLowerCase()}Text`]}
                                         </p>
                                     </div>
                                 ))}
                                 
                                 {(expandedChar.characterPlots || []).length > 0 && (
-                                   <div className="mt-6">
-                                      <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-2 tracking-widest flex items-center gap-1">
-                                         <Swords size={12}/> Tramas Activas
+                                   <div className="mt-8 pt-8 border-t border-stone-100">
+                                      <h4 className="text-[10px] font-bold text-stone-400 uppercase mb-4 tracking-widest flex items-center gap-2">
+                                         <Swords size={14}/> Tramas Activas
                                       </h4>
-                                      <ul className="space-y-2">
+                                      <ul className="space-y-3">
                                          {expandedChar.characterPlots.map(p => (
-                                            <li key={p.id} className="p-3 bg-stone-50 border-l-2 border-amber-400 text-sm font-serif text-stone-700">
+                                            <li key={p.id} className="p-4 bg-stone-50 border-l-4 border-amber-500 text-base font-serif text-stone-800 shadow-sm">
                                                 {p.text}
                                             </li>
                                          ))}
@@ -930,9 +893,7 @@ const CharactersView = ({ data, updateData }) => {
 
   return (
     <div className="p-4 md:p-8 pb-40 animate-in fade-in">
-      
-      {/* BARRA DE FILTROS COMPACTOS - GRID 3 COLUMNAS */}
-      <div className="mb-8 bg-stone-50 border border-stone-200 p-4 rounded-lg shadow-inner">
+      <div className="mb-8 bg-stone-50 border border-stone-200 p-4 shadow-inner">
         <div className="flex items-center gap-2 mb-3 text-amber-700 font-bold text-xs uppercase tracking-wider">
           <Filter size={14} /> Filtro de Personajes
         </div>
@@ -1196,15 +1157,24 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
         </div>
       )}
 
-      {/* HEADER DE LA HISTORIA PRINCIPAL */}
+      {/* HEADER DE LA HISTORIA PRINCIPAL - RESPONSIVE FIX */}
       <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <button onClick={() => setActiveStoryId(null)} className="text-xs font-bold uppercase flex items-center gap-2 text-stone-400 hover:text-stone-800 mb-4"><ArrowLeft size={14}/> Volver</button>
-          <div className="relative group">
+        <div className="w-full">
+          <div className="flex justify-between items-center mb-4 w-full">
+            <button onClick={() => setActiveStoryId(null)} className="text-xs font-bold uppercase flex items-center gap-2 text-stone-400 hover:text-stone-800">
+              <ArrowLeft size={14}/> Volver
+            </button>
+            {/* Cloud Status visible en móvil arriba a la derecha */}
+            <div className="md:hidden">
+               <CloudStatus isSaving={isSaving} />
+            </div>
+          </div>
+          
+          <div className="relative group w-full">
             {isEditingTitle ? (
               <input 
                 autoFocus
-                className="text-3xl md:text-5xl font-serif font-bold w-full bg-transparent border-b-2 border-amber-400 focus:outline-none text-stone-900 placeholder:text-stone-300 pb-2"
+                className="text-4xl md:text-5xl font-serif font-bold w-full bg-transparent border-b-2 border-amber-400 focus:outline-none text-stone-900 placeholder:text-stone-300 pb-2"
                 value={data.title||""} 
                 onChange={(e) => updateData({...data, title: e.target.value})} 
                 onBlur={() => setIsEditingTitle(false)}
@@ -1212,7 +1182,7 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
                 placeholder="TÍTULO" 
               />
             ) : (
-              <h1 className="text-3xl md:text-5xl font-serif font-bold text-stone-900 pb-2 border-b-2 border-transparent relative inline-block group-hover:border-stone-100 transition-all cursor-text" onClick={() => setIsEditingTitle(true)}>
+              <h1 className="text-4xl md:text-5xl font-serif font-bold text-stone-900 pb-2 border-b-2 border-transparent relative group-hover:border-stone-100 transition-all cursor-text text-center" onClick={() => setIsEditingTitle(true)}>
                 {data.title || "Sin Título"}
                 <button 
                   onClick={(e) => { e.stopPropagation(); setIsEditingTitle(true); }}
@@ -1224,7 +1194,10 @@ const StoryHub = ({ user, stories, activeStoryId, setActiveStoryId, data, update
             )}
           </div>
         </div>
-        <CloudStatus isSaving={isSaving} />
+        {/* Cloud Status visible en PC a la derecha */}
+        <div className="hidden md:block">
+           <CloudStatus isSaving={isSaving} />
+        </div>
       </div>
 
       {/* 2. ARQUETIPOS */}
@@ -1432,8 +1405,9 @@ export default function NarrativaOlympus() {
   const navItems = [ { id: 'structure', label: 'Estructura', icon: Columns }, { id: 'world', label: 'Mundo', icon: Globe }, { id: 'characters', label: 'Personajes', icon: Users }, { id: 'story', label: 'Historia', icon: Scroll } ];
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#fdfbf7] text-stone-800 font-sans md:max-w-md md:mx-auto md:border-x md:border-stone-200 md:shadow-2xl overflow-hidden selection:bg-amber-200">
+    <div className="min-h-screen w-full flex flex-col bg-[#fdfbf7] text-stone-800 md:max-w-4xl md:mx-auto md:border-x md:border-stone-200 md:shadow-2xl overflow-x-hidden selection:bg-amber-200">
       <OlympusBackground />
+      <GlobalStyles />
       <main className="flex-1 overflow-y-auto no-scrollbar scroll-smooth z-10 relative">
         {(activeStoryId && activeTab !== 'story') 
           ? (activeTab === 'structure' ? <StructureView data={storyData} updateData={updateStoryData}/> : activeTab === 'world' ? <WorldView data={storyData} updateData={updateStoryData}/> : <CharactersView data={storyData} updateData={updateStoryData}/>)
@@ -1444,7 +1418,7 @@ export default function NarrativaOlympus() {
         }
       </main>
       {user && activeStoryId && (
-        <nav className="absolute bottom-0 left-0 right-0 z-30 bg-white border-t border-stone-200 flex justify-between h-16">
+        <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-stone-200 flex justify-between h-16">
           {navItems.map((item) => (
             <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex-1 flex flex-col items-center justify-center gap-1 border-t-4 transition-all ${activeTab === item.id ? 'border-amber-500 bg-stone-50 text-stone-900' : 'border-transparent text-stone-400'}`}>
               <item.icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 1.5}/>
