@@ -135,9 +135,7 @@ const CloudStatus = ({ isSaving }) => (
   </div>
 );
 
-// Nuevo componente para la Tarjeta de Personaje estilo "Full Card"
 const CharacterCard = ({ char, onClick }) => {
-  // Generar un color de fondo suave basado en el nombre para dar variedad si no hay foto real
   const getBgColor = (name) => {
     const colors = ['bg-stone-200', 'bg-stone-300', 'bg-amber-100', 'bg-orange-100', 'bg-blue-100', 'bg-emerald-100'];
     let hash = 0;
@@ -148,37 +146,37 @@ const CharacterCard = ({ char, onClick }) => {
   return (
     <div 
       onClick={onClick}
-      className="relative aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group bg-white border border-stone-200"
+      className="relative aspect-square rounded-lg overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group bg-white border border-stone-200"
     >
-      {/* Full Background Avatar / Placeholder */}
       <div className={`absolute inset-0 ${getBgColor(char.name || "")} flex items-center justify-center`}>
-         <span className="font-serif text-6xl font-bold text-stone-400/50 select-none">
+         <span className="font-serif text-6xl md:text-8xl font-bold text-stone-400/50 select-none">
             {char.name ? char.name.substring(0, 1).toUpperCase() : "?"}
          </span>
       </div>
 
-      {/* Badges (Top) */}
-      <div className="absolute top-2 right-2 flex gap-1">
+      <div className="absolute top-1 right-1 flex gap-1">
         {char.noble === "Si" && (
-          <div className="p-1.5 bg-amber-400 text-white rounded-full shadow-sm" title="Noble">
-            <Crown size={12} fill="currentColor" />
+          <div className="p-1 bg-amber-400 text-white rounded-full shadow-sm" title="Noble">
+            <Crown size={10} fill="currentColor" />
           </div>
         )}
         {char.csm && char.csm !== "No" && (
-          <div className="p-1.5 bg-stone-800 text-white rounded-full shadow-sm" title={`CSM: ${char.csm}`}>
-            <Shield size={12} />
+          <div className="p-1 bg-stone-800 text-white rounded-full shadow-sm" title={`CSM: ${char.csm}`}>
+            <Shield size={10} />
           </div>
         )}
       </div>
 
-      {/* Name Overlay (Bottom) */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pt-12 bg-gradient-to-t from-stone-900/90 via-stone-900/60 to-transparent text-white">
-        <h4 className="font-serif font-bold text-lg leading-tight truncate drop-shadow-md">{char.name || "Sin Nombre"}</h4>
-        <div className="flex justify-between items-end mt-1">
-           <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300 truncate pr-2">
+      {/* TEXTO MÁS GRANDE Y VISIBLE */}
+      <div className="absolute bottom-0 left-0 right-0 p-2 pb-3 pt-8 bg-gradient-to-t from-stone-900/95 via-stone-900/70 to-transparent text-white">
+        <h4 className="font-serif font-bold text-sm md:text-lg leading-tight truncate drop-shadow-md mb-0.5">
+          {char.name || "Sin Nombre"}
+        </h4>
+        <div className="flex justify-between items-end">
+           <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-stone-300 truncate pr-1">
              {char.race || "Desconocido"}
            </span>
-           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+           <div className="opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
              <Maximize2 size={14} className="text-white" />
            </div>
         </div>
@@ -264,6 +262,7 @@ const CharactersView = ({ data, updateData }) => {
   });
   
   const [expandedCharId, setExpandedCharId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false); // Nuevo estado de edición
 
   if (!data) return <LoadingView />;
 
@@ -281,6 +280,7 @@ const CharactersView = ({ data, updateData }) => {
     };
     updateData({ ...data, characters: [newChar, ...data.characters] });
     setExpandedCharId(newChar.id);
+    setIsEditing(true); // Al crear nuevo, entrar directo a editar
   };
 
   const updateChar = (id, field, val) => {
@@ -305,16 +305,24 @@ const CharactersView = ({ data, updateData }) => {
   });
 
   const FilterSelect = ({ label, value, options, onChange }) => (
-    <div className="flex flex-col min-w-[120px]">
-      <label className="text-[9px] font-bold text-stone-400 uppercase mb-1 ml-1">{label}</label>
+    <div className="flex flex-col w-full">
+      <label className="text-[8px] font-bold text-stone-400 uppercase mb-1 ml-1 tracking-widest">{label}</label>
       <select 
-        className="bg-white border border-stone-200 text-stone-700 text-xs rounded-md p-2 focus:outline-none focus:border-amber-400 cursor-pointer"
+        className="bg-white border border-stone-200 text-stone-700 text-[10px] font-bold rounded-md p-1.5 focus:outline-none focus:border-amber-400 cursor-pointer w-full"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
         <option value={label.endsWith('s') ? "Todos" : "Todas"}>Todas</option>
         {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
       </select>
+    </div>
+  );
+
+  // Helper para renderizar badges en modo lectura
+  const DataBadge = ({ label, value }) => (
+    <div className="flex flex-col bg-stone-50 p-2 rounded border border-stone-100">
+        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-1">{label}</span>
+        <span className="text-xs font-serif font-bold text-stone-800">{value || "-"}</span>
     </div>
   );
 
@@ -326,91 +334,131 @@ const CharactersView = ({ data, updateData }) => {
         <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
              {/* Header */}
              <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-200 bg-white shadow-sm">
-                 <button onClick={() => setExpandedCharId(null)} className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
+                 <button onClick={() => { setExpandedCharId(null); setIsEditing(false); }} className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
                    <ArrowLeft size={18}/> Volver
                  </button>
-                 <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">Ficha de Personaje</h2>
-                 <button onClick={() => setExpandedCharId(null)} className="text-amber-600 hover:text-amber-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-3 py-1 rounded-full">
-                   <Check size={16}/> Guardar
-                 </button>
+                 
+                 {isEditing ? (
+                     <button onClick={() => setIsEditing(false)} className="text-amber-600 hover:text-amber-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200">
+                        <Check size={16}/> Listo
+                     </button>
+                 ) : (
+                     <button onClick={() => setIsEditing(true)} className="text-stone-500 hover:text-amber-600 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-white px-4 py-1.5 rounded-full border border-stone-200 hover:border-amber-400 transition-all">
+                        <Edit2 size={14}/> Editar
+                     </button>
+                 )}
              </div>
 
              {/* Content */}
              <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-3xl mx-auto w-full">
                 <div className="flex flex-col items-center mb-8">
-                    <div className="transform scale-150 mb-4">
+                    <div className="transform scale-150 mb-6 shadow-lg rounded-sm">
                         <SquareAvatar char={expandedChar} size="lg" />
                     </div>
-                    <input 
-                      className="font-serif font-bold text-3xl text-center text-stone-900 bg-transparent border-b border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none w-full placeholder:text-stone-300"
-                      value={expandedChar.name} 
-                      onChange={(e) => updateChar(expandedChar.id, 'name', e.target.value)}
-                      placeholder="Nombre del Personaje"
-                    />
+                    {isEditing ? (
+                        <input 
+                          className="font-serif font-bold text-3xl text-center text-stone-900 bg-transparent border-b border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none w-full placeholder:text-stone-300 pb-1"
+                          value={expandedChar.name} 
+                          onChange={(e) => updateChar(expandedChar.id, 'name', e.target.value)}
+                          placeholder="Nombre del Personaje"
+                        />
+                    ) : (
+                        <h1 className="font-serif font-bold text-4xl text-center text-stone-900 tracking-tight">{expandedChar.name || "Sin Nombre"}</h1>
+                    )}
                 </div>
 
-                <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm space-y-6">
-                    {/* Selectors Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div className="flex flex-col">
-                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Importancia</label>
-                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.importance} onChange={(e) => updateChar(expandedChar.id, 'importance', e.target.value)}>
-                                {CHAR_IMPORTANCE.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                        </div>
-                        <div className="flex flex-col">
-                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Raza</label>
-                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.race} onChange={(e) => updateChar(expandedChar.id, 'race', e.target.value)}>
-                                {CHAR_RACES.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                        </div>
-                        <div className="flex flex-col">
-                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Mundo</label>
-                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.world} onChange={(e) => updateChar(expandedChar.id, 'world', e.target.value)}>
-                                {CHAR_WORLDS.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                        </div>
-                        <div className="flex flex-col">
-                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">CSM</label>
-                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.csm} onChange={(e) => updateChar(expandedChar.id, 'csm', e.target.value)}>
-                                {CHAR_CSM.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                        </div>
-                        <div className="flex flex-col">
-                            <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Noble</label>
-                            <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.noble} onChange={(e) => updateChar(expandedChar.id, 'noble', e.target.value)}>
-                                {CHAR_NOBLE.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                        </div>
-                    </div>
+                <div className="bg-white border border-stone-200 rounded-lg p-6 shadow-sm space-y-8">
+                    
+                    {/* MODO EDICIÓN */}
+                    {isEditing ? (
+                        <>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="flex flex-col">
+                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Importancia</label>
+                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.importance} onChange={(e) => updateChar(expandedChar.id, 'importance', e.target.value)}>
+                                        {CHAR_IMPORTANCE.map(o => <option key={o} value={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Raza</label>
+                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.race} onChange={(e) => updateChar(expandedChar.id, 'race', e.target.value)}>
+                                        {CHAR_RACES.map(o => <option key={o} value={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Mundo</label>
+                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.world} onChange={(e) => updateChar(expandedChar.id, 'world', e.target.value)}>
+                                        {CHAR_WORLDS.map(o => <option key={o} value={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">CSM</label>
+                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.csm} onChange={(e) => updateChar(expandedChar.id, 'csm', e.target.value)}>
+                                        {CHAR_CSM.map(o => <option key={o} value={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-[9px] font-bold text-stone-400 uppercase mb-1">Noble</label>
+                                    <select className="p-2 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 outline-none" value={expandedChar.noble} onChange={(e) => updateChar(expandedChar.id, 'noble', e.target.value)}>
+                                        {CHAR_NOBLE.map(o => <option key={o} value={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                            </div>
 
-                    {/* Text Areas */}
-                    <div className="space-y-4 pt-4 border-t border-stone-100">
-                        <div>
-                            <label className="text-xs font-bold text-amber-700 uppercase mb-2 block">Trama Personal (Deseo)</label>
-                            <textarea 
-                                className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y"
-                                value={expandedChar.charPlot || ""}
-                                onChange={(e) => updateChar(expandedChar.id, 'charPlot', e.target.value)}
-                                placeholder="¿Qué desea conseguir?"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">Subtrama (Conflicto)</label>
-                            <textarea 
-                                className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y"
-                                value={expandedChar.charSubplot || ""}
-                                onChange={(e) => updateChar(expandedChar.id, 'charSubplot', e.target.value)}
-                                placeholder="¿Qué le impide conseguirlo?"
-                            />
-                        </div>
-                    </div>
+                            <div className="space-y-4 pt-4 border-t border-stone-100">
+                                <div>
+                                    <label className="text-xs font-bold text-amber-700 uppercase mb-2 block">Trama Personal (Deseo)</label>
+                                    <textarea 
+                                        className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y"
+                                        value={expandedChar.charPlot || ""}
+                                        onChange={(e) => updateChar(expandedChar.id, 'charPlot', e.target.value)}
+                                        placeholder="¿Qué desea conseguir?"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-stone-500 uppercase mb-2 block">Subtrama (Conflicto)</label>
+                                    <textarea 
+                                        className="w-full p-3 bg-stone-50 rounded border border-stone-200 focus:border-amber-400 focus:outline-none min-h-[100px] font-serif text-stone-700 resize-y"
+                                        value={expandedChar.charSubplot || ""}
+                                        onChange={(e) => updateChar(expandedChar.id, 'charSubplot', e.target.value)}
+                                        placeholder="¿Qué le impide conseguirlo?"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="pt-4">
-                        <button onClick={() => deleteChar(expandedChar.id)} className="w-full py-3 text-red-500 border border-red-200 hover:bg-red-50 rounded uppercase text-xs font-bold flex items-center justify-center gap-2 transition-colors">
-                            <Trash2 size={16}/> Eliminar Personaje
-                        </button>
-                    </div>
+                            <div className="pt-4">
+                                <button onClick={() => deleteChar(expandedChar.id)} className="w-full py-3 text-red-500 border border-red-200 hover:bg-red-50 rounded uppercase text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+                                    <Trash2 size={16}/> Eliminar Personaje
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        /* MODO LECTURA */
+                        <>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <DataBadge label="Importancia" value={expandedChar.importance} />
+                                <DataBadge label="Raza" value={expandedChar.race} />
+                                <DataBadge label="Mundo" value={expandedChar.world} />
+                                <DataBadge label="CSM" value={expandedChar.csm} />
+                                <DataBadge label="Noble" value={expandedChar.noble} />
+                            </div>
+
+                            <div className="space-y-6 pt-6 border-t border-stone-100">
+                                <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100/50">
+                                    <h4 className="text-xs font-bold text-amber-800 uppercase mb-2 tracking-widest">Trama Personal</h4>
+                                    <p className="font-serif text-lg text-stone-800 leading-relaxed italic">
+                                        {expandedChar.charPlot || "Sin definir."}
+                                    </p>
+                                </div>
+                                <div className="p-2">
+                                    <h4 className="text-xs font-bold text-stone-400 uppercase mb-2 tracking-widest">Subtrama & Conflicto</h4>
+                                    <p className="font-serif text-base text-stone-600 leading-relaxed">
+                                        {expandedChar.charSubplot || "Sin definir."}
+                                    </p>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
              </div>
         </div>
@@ -420,12 +468,12 @@ const CharactersView = ({ data, updateData }) => {
   return (
     <div className="p-4 md:p-8 pb-40 animate-in fade-in">
       
-      {/* BARRA DE FILTROS */}
-      <div className="mb-8 bg-stone-50 border border-stone-200 p-4 rounded-lg overflow-x-auto shadow-inner">
+      {/* BARRA DE FILTROS COMPACTOS - GRID 3 COLUMNAS */}
+      <div className="mb-8 bg-stone-50 border border-stone-200 p-4 rounded-lg shadow-inner">
         <div className="flex items-center gap-2 mb-3 text-amber-700 font-bold text-xs uppercase tracking-wider">
-          <Filter size={14} /> Filtros de Galería
+          <Filter size={14} /> Filtro de Personajes
         </div>
-        <div className="flex gap-3 pb-2">
+        <div className="grid grid-cols-3 gap-3 pb-2">
           <FilterSelect label="Importancia" value={filters.importance} options={CHAR_IMPORTANCE} onChange={v => setFilters({...filters, importance: v})} />
           <FilterSelect label="Raza" value={filters.race} options={CHAR_RACES} onChange={v => setFilters({...filters, race: v})} />
           <FilterSelect label="Mundo" value={filters.world} options={CHAR_WORLDS} onChange={v => setFilters({...filters, world: v})} />
@@ -435,17 +483,17 @@ const CharactersView = ({ data, updateData }) => {
       </div>
 
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-serif font-bold text-xl text-stone-800">Galería ({filteredChars.length})</h3>
+        <h3 className="font-serif font-bold text-xl text-stone-800">Personajes ({filteredChars.length})</h3>
         <PillarButton onClick={addChar} variant="gold" icon={Plus}>Añadir Personaje</PillarButton>
       </div>
 
-      {/* GRID DE PERSONAJES (NUEVO DISEÑO) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {/* GRID DE 3 COLUMNAS MINIMO PARA MOVIL */}
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
         {filteredChars.map(char => (
           <CharacterCard 
             key={char.id} 
             char={char} 
-            onClick={() => setExpandedCharId(char.id)} 
+            onClick={() => { setExpandedCharId(char.id); setIsEditing(false); }} 
           />
         ))}
         {filteredChars.length === 0 && (
