@@ -4,6 +4,9 @@ import StructureView from "./views/StructureView";
 import WorldView from "./views/WorldView";
 import CharactersView from "./views/CharactersView";
 import StoryHub from "./views/StoryHub";
+import GlobalStyles from './styles/GlobalStyles';
+
+// Firebase SDK
 import { initializeApp, getApps } from "firebase/app";
 import { 
   getAuth, 
@@ -56,34 +59,7 @@ try {
 
 const appId = firebaseConfig.projectId;
 
-// --- ESTILOS GLOBALES FORZADOS (OLIMPO PURO) ---
-const GlobalStyles = () => (
-  <style>{`
-    :root { color-scheme: light; }
-    body, html, #root {
-      background-color: #fdfbf7 !important; /* Blanco Mármol */
-      color: #1c1917 !important; /* Texto Piedra Oscura */
-      height: 100%;
-      margin: 0;
-    }
-    /* REGLA MAESTRA: Nada de curvas */
-    * { border-radius: 0px !important; }
-    input:not([type="checkbox"]):not([type="radio"]), select, textarea {
-      border: none;
-      border-bottom: 1px solid #d6d3d1;
-      background: transparent;
-      border-radius: 0 !important;
-    }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-bottom: 2px solid #d97706;
-      box-shadow: none !important;
-    }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f1f1; }
-    ::-webkit-scrollbar-thumb { background: #d6d3d1; }
-  `}</style>
-);
+
 
 // --- PLANTILLAS ---
 const PLOT_ARCHETYPES = ["Vencer al Monstruo", "Pobreza a Riqueza", "La Búsqueda", "Viaje y Retorno", "Comedia", "Tragedia", "Renacimiento"];
@@ -209,7 +185,7 @@ export default function NarrativaOlympus() {
     <div className="min-h-screen w-full flex flex-col bg-[#fdfbf7] text-stone-800 md:max-w-4xl md:mx-auto md:border-x md:border-stone-200 md:shadow-2xl overflow-x-hidden selection:bg-amber-200">
       <OlympusBackground />
       <GlobalStyles />
-      <main className="flex-1 overflow-y-auto no-scrollbar scroll-smooth z-10 relative">
+      <main className="flex-1 z-10 relative">
         {(activeStoryId && activeTab !== 'story') 
           ? (activeTab === 'structure' ? <StructureView data={storyData} updateData={updateStoryData}/> : activeTab === 'world' ? <WorldView data={storyData} updateData={updateStoryData}/> : <CharactersView data={storyData} updateData={updateStoryData}/>)
           : <StoryHub 
