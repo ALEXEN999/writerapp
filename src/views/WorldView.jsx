@@ -4,6 +4,8 @@ import LoadingView from "../components/ui/LoadingView";
 import MarbleCard from "../components/ui/MarbleCard";
 import PillarButton from "../components/ui/PillarButton";
 import SquareAvatar from "../components/ui/SquareAvatar";
+import { compressImage } from "../utils/image";
+import { getImageSizeKB } from "../utils/image";
 
 import {
   ArrowLeft,
@@ -19,29 +21,6 @@ import {
   Trash2,
   Edit2,
 } from "lucide-react";
-
-// --- UTILIDAD DE IMAGEN (COPIADA DE App.jsx) ---
-const compressImage = (file) => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target.result;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 300;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-        resolve(dataUrl);
-      };
-    };
-  });
-};
 
 // --- EDITOR DE ENTIDAD (MUNDOS Y ESPECIES) ---
 const EntityEditor = ({
