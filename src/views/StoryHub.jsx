@@ -3,6 +3,7 @@ import MarbleCard from "../components/ui/MarbleCard";
 import PillarButton from "../components/ui/PillarButton";
 import LoadingView from "../components/ui/LoadingView";
 import CloudStatus from "../components/ui/CloudStatus";
+import FullScreenEditor from "../components/entity/FullScreenEditor";
 
 import {
   Book,
@@ -52,6 +53,7 @@ const StoryHub = ({
 
   // Estados para el Editor de Trama Fullscreen
   const [expandedPlotId, setExpandedPlotId] = useState(null);
+  const [isEditingPlot, setIsEditingPlot] = useState(false);
 
   // Estado para Modal de Borrado
   const [deletingStory, setDeletingStory] = useState(null);
@@ -98,6 +100,7 @@ const StoryHub = ({
     };
     updateData({ ...data, plots: [...(data.plots || []), newPlot] });
     setExpandedPlotId(newPlot.id);
+    setIsEditingPlot(true);
   };
 
   const removePlot = (id) => {
@@ -116,6 +119,8 @@ const StoryHub = ({
   };
 
   const toggleCharForExpandedPlot = (charId) => {
+    if (!isEditingPlot) return; //  si está en lectura, no hace nada
+
     const currentPlot = (data.plots || []).find((p) => p.id === expandedPlotId);
     if (!currentPlot) return;
 
@@ -125,7 +130,7 @@ const StoryHub = ({
       : [...currentIds, charId];
 
     updateExpandedPlot("characterIds", newIds);
-  };
+};
 
   // IDEAS
   const addIdea = () => {
@@ -324,34 +329,23 @@ const StoryHub = ({
     <div className="p-4 md:p-8 pb-40 max-w-4xl mx-auto animate-in fade-in relative">
       {/* --- FULLSCREEN PLOT EDITOR --- */}
       {expandedPlotId && expandedPlot && (
-        <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-200 bg-white shadow-sm">
-            <button
-              onClick={() => setExpandedPlotId(null)}
-              className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider"
-            >
-              <ArrowLeft size={18} /> Volver
-            </button>
-            <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">
-              Editando Trama
-            </h2>
-            <button
-              onClick={() => setExpandedPlotId(null)}
-              className="text-amber-600 hover:text-amber-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-3 py-1 rounded-full"
-            >
-              <Check size={16} /> Guardar
-            </button>
-          </div>
-
-          {/* Contenido */}
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 max-w-4xl mx-auto w-full">
+        <FullScreenEditor
+          title="Trama"
+          isEditing={isEditingPlot}
+          onToggleEditing={() => setIsEditingPlot(!isEditingPlot)}
+          onClose={() => {
+            setExpandedPlotId(null);
+            setIsEditingPlot(false); //  al cerrar, vuelve a lectura
+          }}
+        >
+          <div className="max-w-4xl mx-auto w-full">
             {/* Title */}
             <input
-              className="w-full text-3xl md:text-5xl font-serif font-bold text-stone-900 bg-transparent border-b-2 border-transparent hover:border-stone-200 focus:border-amber-400 focus:outline-none placeholder:text-stone-300 mb-8"
+              className="w-full text-3xl md:text-5xl font-serif font-bold ..."
               value={expandedPlot.title || expandedPlot.type || ""}
               onChange={(e) => updateExpandedPlot("title", e.target.value)}
               placeholder="Título de la Trama"
+              readOnly={!isEditingPlot}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -429,18 +423,19 @@ const StoryHub = ({
                     <StickyNote size={14} /> Descripción y Notas
                   </label>
                   <textarea
-                    className="w-full h-full min-h-[400px] bg-transparent focus:outline-none resize-none text-lg font-serif text-stone-700 leading-relaxed"
+                    className="w-full h-full min-h-[400px] ..."
                     value={expandedPlot.description || ""}
                     onChange={(e) =>
                       updateExpandedPlot("description", e.target.value)
                     }
                     placeholder="Escribe aquí el desarrollo de esta trama..."
+                    readOnly={!isEditingPlot}
                   />
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </FullScreenEditor>
       )}
 
       {/* HEADER HISTORIA */}
@@ -570,7 +565,10 @@ const StoryHub = ({
           {(data.plots || []).map((plot) => (
             <div
               key={plot.id}
-              onClick={() => setExpandedPlotId(plot.id)}
+              onClick={() => {
+                setExpandedPlotId(plot.id);
+                setIsEditingPlot(false);
+              }}
               className="bg-white border border-stone-200 p-5 shadow-sm hover:border-amber-400 hover:shadow-md transition-all cursor-pointer relative group"
             >
               <div className="absolute top-2 right-2 text-stone-300 opacity-0 group-hover:opacity-100 transition-opacity">
