@@ -34,7 +34,7 @@ const FullScreenEditor = ({
             {isEditing ? "Listo" : "Editar"}
           </button>
         ) : (
-          <div className="w-[88px]" /> // espacio para no descuadrar
+          <div className="w-[88px]" /> 
         )}
       </div>
 

@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import SquareAvatar from "../ui/SquareAvatar";
 import { compressImage } from "../../utils/image";
+import FullScreenEditor from "./FullScreenEditor";
 
 import {
   ArrowLeft,
@@ -75,28 +76,15 @@ const EntityEditor = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#fdfbf7] flex flex-col animate-in slide-in-from-bottom-10 duration-300  pb-16">
-      <div className="flex items-center justify-between p-4 md:p-6 border-b border-stone-200 bg-white shadow-sm">
-        <button
-          onClick={() => {
-            setExpandedItemId(null);
-            setEditingItem(false);
-          }}
-          className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider"
-        >
-          <ArrowLeft size={18} /> Volver
-        </button>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">
-          {isSpecies ? "Especie" : "Mundo"}
-        </h2>
-        <button
-          onClick={() => setEditingItem(!editingItem)}
-          className="text-amber-600 flex items-center gap-2 font-bold text-xs uppercase tracking-wider bg-amber-50 px-3 py-1 rounded-full"
-        >
-          {editingItem ? <Check size={16} /> : <Edit2 size={14} />}{" "}
-          {editingItem ? "Listo" : "Editar"}
-        </button>
-      </div>
+    <FullScreenEditor
+      title={isSpecies ? "Especie" : "Mundo"}
+      isEditing={editingItem}
+      onToggleEditing={() => setEditingItem(!editingItem)}
+      onClose={() => {
+        setExpandedItemId(null);
+        setEditingItem(false);
+      }}
+    >
 
       <div className="flex-1 overflow-y-auto p-6 md:p-8 pb-6 max-w-3xl mx-auto w-full">
         <div className="flex flex-col items-center mb-8">
@@ -371,7 +359,7 @@ const EntityEditor = ({
           )}
         </div>
       </div>
-    </div>
+    </FullScreenEditor>
   );  
 };
 
