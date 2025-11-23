@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import OlympusBackground from './components/ui/OlympusBackground';
-import MarbleCard from './components/ui/MarbleCard';
-import PillarButton from "./components/ui/PillarButton";
-import CharacterCard from "./components/ui/CharacterCard";
-import SquareAvatar from "./components/ui/SquareAvatar";
-import LoadingView from "./components/ui/LoadingView";
 import StructureView from "./views/StructureView";
 import WorldView from "./views/WorldView";
 import CharactersView from "./views/CharactersView";
