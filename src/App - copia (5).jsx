@@ -35,21 +35,21 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURACIÓN FIREBASE ---
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+const YOUR_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAs_HluBQ93QBY1ozmfqgGmMwxyVsw6Mg0",
+  authDomain: "writerapp-1f216.firebaseapp.com",
+  projectId: "writerapp-1f216",
+  storageBucket: "writerapp-1f216.firebasestorage.app",
+  messagingSenderId: "263441475980",
+  appId: "1:263441475980:web:cb000e3a90114df45d4ea9",
+  measurementId: "G-L7B60LT4GH"
 };
 
 // --- INICIALIZACIÓN ---
 let app, auth, db;
 try {
   if (getApps().length === 0) {
-    app = initializeApp(firebaseConfig);
+    app = initializeApp(YOUR_FIREBASE_CONFIG);
   } else {
     app = getApps()[0];
   }
@@ -59,7 +59,7 @@ try {
   console.error("Error inicializando Firebase:", e);
 }
 
-const appId = firebaseConfig.projectId;
+const appId = YOUR_FIREBASE_CONFIG.projectId;
 
 // --- ESTILOS GLOBALES FORZADOS (OLIMPO PURO) ---
 const GlobalStyles = () => (
@@ -118,7 +118,7 @@ export default function NarrativaOlympus() {
   const [isDemo, setIsDemo] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  const appId = firebaseConfig.projectId;
+  const appId = YOUR_FIREBASE_CONFIG.projectId;
 
   useEffect(() => { 
     if(isDemo || !auth) return;
