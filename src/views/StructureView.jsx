@@ -609,42 +609,28 @@ const StructureView = ({ data, updateData }) => {
 
   // --- PASO 2: ESTRUCTURA ACTIVA ---
   return (
-    <div className="pb-32 px-4 md:px-8 pt-6 animate-in fade-in max-w-5xl mx-auto">
+    <div className="pb-16  md:px-8 animate-in fade-in max-w-5xl mx-auto">
       <ChapterEditor />
 
       {/* Header Estructura Activa */}
-        <div className="flex items-center justify-between p-4 border-b border-stone-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between p-4 border-b border-stone-200 bg-white  shadow-sm">
               <button
                 onClick={() => {
                   setExpandedChapterId(null);
                   setExpandedStepId(null);
                   setIsEditingChapter(false);
+                  resetStructure();
                 }}
                 className="text-stone-500 hover:text-stone-800 flex items-center gap-2 font-bold text-xs uppercase tracking-wider"
               >
                 <ArrowLeft size={18} />
-                Cerrar
+                Cambiar Estructura
               </button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center  gap-3">
                 <span className="text-xs font-bold uppercase tracking-widest text-stone-400">
-                  {isEditingChapter ? "Editando capítulo" : "Vista de lectura"}
+                  {isEditingChapter ? "Editando capítulo" : STRUCTURE_TEMPLATES[data.structureType].name}
                 </span>
-
-                <button
-                  onClick={() => setIsEditingChapter((prev) => !prev)}
-                  className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-stone-600 border border-stone-300 px-3 py-1 rounded-full hover:bg-stone-900 hover:text-amber-100 transition-all"
-                >
-                  {isEditingChapter ? (
-                    <>
-                      <CheckCircle2 size={14} /> Listo
-                    </>
-                  ) : (
-                    <>
-                      <Edit2 size={14} /> Editar
-                    </>
-                  )}
-                </button>
               </div>
 
               <div className="w-2 md:w-8" />
@@ -652,11 +638,11 @@ const StructureView = ({ data, updateData }) => {
 
 
       {/* Lista de Pasos (Contenedores) */}
-      <div className="space-y-12 pb-12">
+      <div className="space-y-12 px-4 pb-12 mt-4">
         {(data.structurePoints || []).map((step, index) => (
           <div
             key={step.id}
-            className="relative pl-8 md:pl-12 border-l-2 border-stone-200 group"
+            className="relative  pl-4 md:pl-12 border-l-2 border-stone-200 group"
           >
             {/* Marcador del Paso */}
             <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-stone-200 border-2 border-[#fdfbf7] ring-1 ring-stone-300 group-hover:bg-amber-500 group-hover:ring-amber-500 transition-all z-10"></div>
@@ -897,7 +883,7 @@ const StructureView = ({ data, updateData }) => {
         ))}
 
         {/* Añadir Paso Base Manualmente */}
-        <div className="pl-8 md:pl-12">
+        <div className="pl-0 md:pl-12">
           <button
             onClick={addBaseStep}
             className="w-full py-4 border-2 border-dashed border-stone-300 text-stone-400 hover:text-amber-600 hover:border-amber-400 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"

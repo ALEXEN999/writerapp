@@ -81,7 +81,7 @@ const WorldView = ({ data, updateData }) => {
 
   return (
     <div className="p-4 md:p-6 pb-32 animate-in fade-in">
-      <section>
+      <section className="pb-6">
         <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-200 pb-2 flex items-center gap-2">
           <Globe size={14} /> Mundos
         </h3>
@@ -137,7 +137,7 @@ const WorldView = ({ data, updateData }) => {
         </div>
       </section>
 
-      <section>
+      <section className="pb-6">
         <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-6 border-b border-stone-200 pb-2 flex items-center gap-2">
           <Dna size={14} /> Especies
         </h3>
@@ -193,7 +193,7 @@ const WorldView = ({ data, updateData }) => {
         </div>
       </section>
 
-      <section>
+      <section className="pb-6">
         <MarbleCard header="Sistema de Magia">
           <textarea
             className="w-full p-6 min-h-[300px] bg-transparent focus:outline-none font-serif text-lg leading-relaxed resize-none text-stone-800 placeholder:text-stone-300"

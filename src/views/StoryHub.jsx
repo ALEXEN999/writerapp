@@ -100,7 +100,7 @@ const StoryHub = ({
     };
     updateData({ ...data, plots: [...(data.plots || []), newPlot] });
     setExpandedPlotId(newPlot.id);
-    setIsEditingPlot(true);
+    setIsEditingPlot(false);
   };
 
   const removePlot = (id) => {
@@ -405,15 +405,17 @@ const StoryHub = ({
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    if (confirm("¿Eliminar esta trama?"))
-                      removePlot(expandedPlot.id);
-                  }}
-                  className="w-full py-3 border border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
-                >
-                  <Trash2 size={14} /> Eliminar Trama
-                </button>
+                {isEditingPlot && (
+                  <button
+                    onClick={() => {
+                      if (confirm("¿Eliminar esta trama?"))
+                        removePlot(expandedPlot.id);
+                    }}
+                    className="w-full py-3 border border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={14} /> Eliminar Trama
+                  </button>
+                )}
               </div>
 
               {/* Columna principal: descripción */}
