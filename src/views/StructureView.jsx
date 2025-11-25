@@ -687,7 +687,7 @@ const StructureView = ({ data, updateData }) => {
                       className={`border relative group/item animate-in slide-in-from-bottom-1 transition-all hover:shadow-md ${
                         isChapter
                           ? "bg-white border-stone-200 hover:border-amber-400"
-                          : "bg-amber-50/50 border-amber-200 p-4"
+                          : "bg-amber-50 border-amber-300 p-4"
                       }`}
                     >
                       {/* CAPITULO COMO TARJETA INTERACTIVA */}
@@ -825,12 +825,15 @@ const StructureView = ({ data, updateData }) => {
 
               {/* Botonera Contextual del Paso */}
               <div className="flex items-center gap-3 pt-4 border-t border-stone-100">
-                <button
+                <PillarButton
                   onClick={() => addItemToStep(step.id, "chapter")}
-                  className="flex items-center gap-2 px-3 py-2 bg-stone-800 text-amber-50 hover:bg-black text-[10px] font-bold uppercase tracking-wider transition-all"
+                  variant="gold"
+                  icon={Plus}
+                  className="border-amber-500 text-amber-700 hover:bg-amber-50"
                 >
-                  <Plus size={12} /> Capítulo
-                </button>
+                  Capítulo
+                </PillarButton>
+
 
                 <div className="w-[1px] h-6 bg-stone-200"></div>
 
@@ -870,12 +873,15 @@ const StructureView = ({ data, updateData }) => {
                     </button>
                   </div>
                 ) : (
-                  <button
+                  <PillarButton
                     onClick={() => setShowPlotSelector(step.id)}
-                    className="flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 hover:border-amber-400 text-stone-600 text-[10px] font-bold uppercase tracking-wider transition-all"
+                    variant="gold"
+                    icon={Plus}
+                    className="!border-stone-300 text-stone-700 hover:border-amber-500 hover:text-amber-700"
                   >
-                    <Plus size={12} /> Trama
-                  </button>
+                    Trama
+                  </PillarButton>
+
                 )}
               </div>
             </div>

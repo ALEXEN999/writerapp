@@ -519,7 +519,7 @@ const StoryHub = ({
 
           <div className="relative flex items-center gap-2 bg-white border border-stone-200 rounded-full px-2 py-1 shadow-sm hover:border-amber-300 transition-colors">
             <select
-              className="bg-transparent text-xs font-bold text-stone-600 uppercase focus:outline-none cursor-pointer py-2 px-2 pr-8 appearance-none"
+              className="np-plain bg-transparent text-xs font-bold text-stone-600 uppercase focus:outline-none cursor-pointer py-2 px-2 pr-8 appearance-none"
               value=""
               onChange={(e) => {
                 if (e.target.value === "custom") {
@@ -551,17 +551,15 @@ const StoryHub = ({
 
       {/* TRAMAS */}
       <div className="mb-12">
-        <div className="flex justify-between items-center mb-4 border-b border-stone-200 pb-2">
+        <div className="flex justify-between items-center mb-4">
           <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest">
             Tramas Activas
           </h3>
-          <button
-            onClick={createNewPlot}
-            className="text-amber-600 hover:text-amber-800 text-xs font-bold uppercase flex items-center gap-1 transition-colors bg-amber-50 px-3 py-1 rounded-full border border-amber-100"
-          >
+          <PillarButton onClick={createNewPlot} variant="gold">
             + Nueva Trama
-          </button>
+          </PillarButton>
         </div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {(data.plots || []).map((plot) => (
@@ -631,13 +629,11 @@ const StoryHub = ({
           <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest">
             Muro de Ideas
           </h3>
-          <button
-            onClick={addIdea}
-            className="text-amber-600 hover:text-amber-800 bg-amber-50 p-2 rounded-full border border-amber-100 transition-colors"
-          >
-            <Plus size={20} />
-          </button>
+          <PillarButton onClick={addIdea} variant="gold" icon={Plus}>
+            Añadir Idea
+          </PillarButton>
         </div>
+
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {(data.ideas || []).map((idea, index) => {

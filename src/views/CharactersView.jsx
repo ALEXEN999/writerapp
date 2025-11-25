@@ -583,12 +583,15 @@ const CharactersView = ({ data, updateData }) => {
                       </button>
                     </div>
                   ))}
-                  <button
+                  <PillarButton
                     onClick={() => addCharacterPlot(expandedChar.id)}
-                    className="text-xs font-bold text-amber-600 hover:text-amber-800 uppercase flex items-center gap-2 mt-2 bg-amber-50 px-4 py-2 border border-amber-100 hover:border-amber-300 w-full justify-center transition-colors"
+                    variant="gold"
+                    icon={Plus}
+                    className="w-full justify-center"
                   >
-                    <Plus size={14} /> Agregar Trama
-                  </button>
+                    Agregar Trama
+                  </PillarButton>
+
                 </div>
               </div>
 
