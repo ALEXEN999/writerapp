@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import MarbleCard from "../components/ui/MarbleCard";
 import PillarButton from "../components/ui/PillarButton";
 import LoadingView from "../components/ui/LoadingView";
@@ -20,6 +20,9 @@ import {
   StickyNote,
   Check,
   CheckCircle2,
+  Download, 
+  Upload, 
+  Cloud
 } from "lucide-react";
 
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
@@ -45,11 +48,14 @@ const StoryHub = ({
   onDemoLogin,
   isSaving,
   onDeleteStory,
-  auth, // 👈 le pasamos auth desde App.jsx
+  auth,
+  onImportStory, // 👈 le pasamos auth desde App.jsx
 }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [newArchetype, setNewArchetype] = useState("");
+  const fileInputRef = useRef(null);
+
 
   // Estados para el Editor de Trama Fullscreen
   const [expandedPlotId, setExpandedPlotId] = useState(null);
@@ -150,6 +156,63 @@ const StoryHub = ({
       ideas: data.ideas.map((i) => (i.id === id ? { ...i, text } : i)),
     });
   };
+
+    const handleExportStory = (story) => {
+    if (!story) return;
+
+    const exportData = {
+      title: story.title || "",
+      plotArchetypes: story.plotArchetypes || [],
+      plots: story.plots || [],
+      ideas: story.ideas || [],
+      structureType: story.structureType || null,
+      structurePoints: story.structurePoints || [],
+      world: story.world || null,
+      characters: story.characters || [],
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeTitle = (story.title || "historia")
+      .toLowerCase()
+      .replace(/[^\w\-]+/g, "_");
+
+    a.href = url;
+    a.download = `${safeTitle}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+    const handleImportFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+
+      if (!json || typeof json !== "object") {
+        alert("El archivo no tiene un formato de historia válido.");
+        return;
+      }
+
+      if (onImportStory) {
+        await onImportStory(json);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error al leer el archivo de historia.");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
 
   // --- RENDERIZADO ---
 
@@ -270,10 +333,26 @@ const StoryHub = ({
           <h2 className="text-2xl font-serif font-bold text-stone-900">
             Biblioteca
           </h2>
-          <PillarButton onClick={onCreateStory} variant="primary" icon={Plus}>
-            Nueva
-          </PillarButton>
+          <div className="flex gap-2">
+            <PillarButton
+              onClick={() => fileInputRef.current?.click()}
+              variant="ghost"
+            >
+              Importar
+            </PillarButton>
+            <PillarButton onClick={onCreateStory} variant="primary" icon={Plus}>
+              Nueva
+            </PillarButton>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            onChange={handleImportFileChange}
+            className="hidden"
+          />
         </div>
+
 
         {stories.length === 0 ? (
           <div className="text-center py-16 border-2 border-dashed border-stone-200">
@@ -299,17 +378,29 @@ const StoryHub = ({
                     </div>
                   </div>
                 </MarbleCard>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeletingStory(s);
-                    setDeleteConfirmation("");
-                  }}
-                  className="absolute top-4 right-4 p-2 text-stone-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 z-10"
-                  title="Eliminar Historia"
-                >
-                  <Trash2 size={18} />
-                </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExportStory(s);
+                      }}
+                      className="absolute top-4 right-14 p-2 text-stone-400 hover:text-amber-700 bg-white/90 hover:bg-amber-50 border border-stone-200 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all z-10"
+                      title="Exportar historia"
+                    >
+                      <Download size={18} />
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingStory(s);
+                        setDeleteConfirmation("");
+                      }}
+                      className="absolute top-4 right-4 p-2 text-stone-400 hover:text-red-700 bg-white/90 hover:bg-red-50 border border-red-100 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all z-10"
+                      title="Eliminar Historia"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+
               </div>
             ))}
           </div>

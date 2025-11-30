@@ -179,6 +179,44 @@ export default function NarrativaOlympus() {
     }
   };
 
+    const handleImportStory = async (importedData) => {
+    if (!importedData || typeof importedData !== "object") return;
+
+    // Evitamos campos que no queremos arrastrar
+    const { id, createdAt, updatedAt, ...rest } = importedData;
+    const baseStory = rest;
+
+    if (isDemo) {
+      const newId = String(Date.now());
+      const story = { id: newId, ...baseStory };
+      setStories([{ id: newId, ...baseStory }, ...stories]);
+      setActiveStoryId(newId);
+      setStoryData(story);
+      return;
+    }
+
+    if (!user || !db) return;
+
+    try {
+      setIsSaving(true);
+      const ref = await addDoc(
+        collection(db, "artifacts", appId, "users", user.uid, "stories"),
+        {
+          ...baseStory,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      );
+      setActiveStoryId(ref.id);
+    } catch (e) {
+      console.error("Error importing story:", e);
+      alert("Error al importar la historia.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
   const navItems = [ { id: 'structure', label: 'Estructura', icon: Columns }, { id: 'world', label: 'Mundo', icon: Globe }, { id: 'characters', label: 'Personajes', icon: Users }, { id: 'story', label: 'Historia', icon: Scroll } ];
 
   return (
@@ -200,6 +238,7 @@ export default function NarrativaOlympus() {
               isSaving={isSaving}
               onDeleteStory={handleDeleteStory}
               auth={auth}   // añadido
+              onImportStory={handleImportStory}
             />
 
         }
