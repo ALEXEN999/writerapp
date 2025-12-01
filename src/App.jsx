@@ -88,6 +88,8 @@ export default function NarrativaOlympus() {
   const [storyData, setStoryData] = useState(null);
   const [isDemo, setIsDemo] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const saveTimeoutRef = useRef(null);
+
   
   const appId = firebaseConfig.projectId;
 
@@ -123,18 +125,43 @@ export default function NarrativaOlympus() {
     setStories([]);
   };
 
-  const updateStoryData = async (newData) => {
+  const updateStoryData = (newData) => {
     setStoryData(newData);
+
     if (isDemo) {
-      setStories(prev => prev.map(s => s.id === activeStoryId ? { ...s, ...newData } : s));
+      setStories(prev =>
+        prev.map(s =>
+          s.id === activeStoryId ? { ...s, ...newData } : s
+        )
+      );
       return;
     }
-    if (user && activeStoryId && db) {
-      setIsSaving(true);
-      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'stories', activeStoryId), { ...newData, updatedAt: serverTimestamp() }, { merge: true });
-      setTimeout(() => setIsSaving(false), 500);
+
+    if (!user || !activeStoryId || !db) return;
+
+    // Debounce: cancelamos guardados anteriores
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+
+    const toSave = newData;
+
+    saveTimeoutRef.current = setTimeout(() => {
+      setIsSaving(true);
+      setDoc(
+        doc(db, 'artifacts', appId, 'users', user.uid, 'stories', activeStoryId),
+        { ...toSave, updatedAt: serverTimestamp() },
+        { merge: true }
+      )
+        .catch((err) => {
+          console.error("Error guardando historia:", err);
+        })
+        .finally(() => {
+          setTimeout(() => setIsSaving(false), 500);
+        });
+    }, 500); // espera 500 ms sin cambios antes de guardar
   };
+
 
   const handleCreateStory = async () => {
     if (!user) return;

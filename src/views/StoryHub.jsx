@@ -165,11 +165,20 @@ const StoryHub = ({
       plotArchetypes: story.plotArchetypes || [],
       plots: story.plots || [],
       ideas: story.ideas || [],
-      structureType: story.structureType || null,
+      structureType: story.structureType ?? null,
       structurePoints: story.structurePoints || [],
-      world: story.world || null,
+
+      // TODO ESTO ES PARTE DE "MUNDO"
+      diegesis: story.diegesis || "",
+      lore: story.lore || [],
+      species: story.species || [],
+      worlds: story.worlds || [],
+      subplots: story.subplots || [],
+
+      // PERSONAJES
       characters: story.characters || [],
     };
+
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
       type: "application/json",

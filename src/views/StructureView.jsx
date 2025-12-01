@@ -255,15 +255,17 @@ const StructureView = ({ data, updateData }) => {
         <div className="max-w-5xl mx-auto w-full">
           <input
             className="w-full text-4xl md:text-5xl font-serif font-bold"
-            value={chapter.title}
-            onChange={(e) =>
+            defaultValue={chapter.title}
+            onBlur={(e) => {
+              if (!isEditingChapter) return;
               updateItemInStep(expandedStepId, chapter.id, {
                 title: e.target.value,
-              })
-            }
+              });
+            }}
             placeholder="Título del Capítulo"
             readOnly={!isEditingChapter}
           />
+
           <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mb-8">
             Perteneciente a: {step.title}
           </p>
@@ -308,9 +310,9 @@ const StructureView = ({ data, updateData }) => {
                       : "Desenlace"}
                   </h4>
                   <textarea
-                    className="w-full min-h-[150px] bg-stone-50 p-4 border border-stone-200 focus:border-amber-400 focus:outline-none font-serif text-stone-700 leading-relaxed resize-y"
-                    value={(chapter.acts || {})[act] || ""}
-                    onChange={(e) =>
+                    className="w-full min-h-[150px] bg-stone-50 ... outline-none font-serif text-stone-700 leading-relaxed resize-y"
+                    defaultValue={(chapter.acts || {})[act] || ""}
+                    onBlur={(e) =>
                       updateItemInStep(expandedStepId, chapter.id, {
                         acts: {
                           ...(chapter.acts || {}),
@@ -320,11 +322,11 @@ const StructureView = ({ data, updateData }) => {
                     }
                     placeholder={`Describe el ${
                       act === "act1"
-                        ? "planteamiento"
+                        ? "inicio"
                         : act === "act2"
-                        ? "conflicto principal"
-                        : "clímax y resolución"
-                    } del capítulo...`}
+                        ? "nudo"
+                        : "desenlace"
+                    } de este capítulo...`}
                     readOnly={!isEditingChapter}
                   />
                 </div>
@@ -334,13 +336,14 @@ const StructureView = ({ data, updateData }) => {
                   Resumen General (Visible en la tarjeta)
                 </label>
                 <textarea
-                  className="w-full p-4 bg-white border border-stone-200 focus:border-amber-400 outline-none text-sm font-serif"
-                  value={chapter.content || ""}
-                  onChange={(e) =>
+                  className="w-full p-4 bg-white border border-stone-200 focus:border-amber-400 outline-none text-base font-serif"
+                  defaultValue={chapter.content || ""}
+                  onBlur={(e) => {
+                    if (!isEditingChapter) return;
                     updateItemInStep(expandedStepId, chapter.id, {
                       content: e.target.value,
-                    })
-                  }
+                    });
+                  }}
                   placeholder="Resumen corto del capítulo..."
                   readOnly={!isEditingChapter}
                 />
@@ -654,11 +657,12 @@ const StructureView = ({ data, updateData }) => {
                 <div className="w-full">
                   <input
                     className="font-serif font-bold text-2xl text-stone-900 bg-transparent border-none focus:outline-none placeholder:text-stone-300 w-full mb-1"
-                    value={step.title}
-                    onChange={(e) =>
+                    defaultValue={step.title}
+                    onBlur={(e) =>
                       updateStepTitle(step.id, e.target.value)
                     }
                   />
+
                   <p className="text-[10px] text-stone-400 uppercase tracking-widest font-bold">
                     Paso {index + 1}
                   </p>
@@ -781,14 +785,15 @@ const StructureView = ({ data, updateData }) => {
                             <textarea
                               className="w-full bg-transparent border-none text-sm text-stone-600 font-serif resize-none focus:outline-none p-0"
                               rows={2}
-                              value={item.content}
-                              onChange={(e) =>
+                              defaultValue={item.content}
+                              onBlur={(e) =>
                                 updateItemInStep(step.id, item.id, {
                                   content: e.target.value,
                                 })
                               }
                               placeholder="Notas sobre el avance de la trama..."
                             />
+
                           </div>
                           <div className="flex flex-col gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
                             <button

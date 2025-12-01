@@ -49,7 +49,7 @@ const BaseStyles = createGlobalStyle`
   textarea,
   select:not(.np-plain) {
     width: 100%;
-    font-size: 16px; /* evita zoom raro en iOS */
+    font-size: 16px;  !important; /* evita zoom raro en iOS */
     padding: 0.4rem 0.6rem;
     border-radius: 0;
     border: 1px solid #e5e7eb;
