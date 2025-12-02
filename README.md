@@ -93,9 +93,12 @@ writerapp/
 ├── public/
 ├── src/
 │   ├── components/
-│   ├── pages/
-│   ├── hooks/
-│   ├── context/
+|   |   ├── entity/
+|   |   ├── ui/
+│   ├── styles/
+│   ├── assets/
+|   ├── utils/
+|   ├── views/
 │   └── App.jsx
 ├── vite.config.js
 ├── package.json
